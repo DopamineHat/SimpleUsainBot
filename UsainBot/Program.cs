@@ -44,7 +44,7 @@ namespace OpenCryptShot
                 {
                     ApiCredentials = new ApiCredentials(config.apiKey, config.apiSecret),
                     LogVerbosity = LogVerbosity.None,
-                    LogWriters = new List<TextWriter> {Console.Out}
+                    LogWriters = new List<TextWriter> { Console.Out }
                 });
             }
             catch (Exception ex)
@@ -52,6 +52,19 @@ namespace OpenCryptShot
                 Console.ForegroundColor = ConsoleColor.Red;
                 Console.WriteLine($"ERROR! Could not set Binance options. Error message: {ex.Message}");
                 Console.Read();
+                return;
+            }
+            decimal strategyrisk = config.risktaking * (decimal)10.0;
+            decimal sellStrategy = config.risktaking * (decimal).03 + (decimal).8;
+            decimal maxsecondsbeforesell = config.risktaking * (decimal)5.0;
+            var client = new BinanceClient();
+            Utilities.Write(ConsoleColor.Cyan, $"Loading exchange info...");
+            WebCallResult<BinanceExchangeInfo> exchangeInfo = client.Spot.System.GetExchangeInfo();
+            client.Spot.Order.PlaceOrder("ETHBTC" , OrderSide.Buy, OrderType.Market, null, 0);
+            var t = exchangeInfo.Data.ServerTime;
+            if (!exchangeInfo.Success)
+            {
+                Utilities.Write(ConsoleColor.Red, $"ERROR! Could not exchange informations. Error code: " + exchangeInfo.Error?.Message);
                 return;
             }
 
@@ -80,12 +93,19 @@ namespace OpenCryptShot
                     Console.ForegroundColor = ConsoleColor.White;
                     symbol = Console.ReadLine();
                 }
-
                 //Exit the program if nothing was entered
                 if (string.IsNullOrEmpty(symbol))
                     return;
                 //Try to execute the order
-                ExecuteOrder(symbol, config.quantity, config.strategyrisk, config.sellStrategy, config.maxsecondsbeforesell);
+                ExecuteOrder(symbol, config.quantity, strategyrisk, sellStrategy, maxsecondsbeforesell, client, exchangeInfo);
+                client = new BinanceClient();
+                exchangeInfo = client.Spot.System.GetExchangeInfo();
+                client.Spot.Order.PlaceOrder("ETHBTC", OrderSide.Buy, OrderType.Market, null, 0);
+                if (!exchangeInfo.Success)
+                {
+                    Utilities.Write(ConsoleColor.Red, $"ERROR! Could not exchange informations. Error code: " + exchangeInfo.Error?.Message);
+                    return;
+                }
             }
         }
 
@@ -98,9 +118,7 @@ namespace OpenCryptShot
                     apiKey = "",
                     apiSecret = "",
                     quantity = (decimal)0.00025,
-                    strategyrisk = (decimal)30.0,
-                    sellStrategy = (decimal).8,
-                    maxsecondsbeforesell = (decimal)20.0,
+                    risktaking = (decimal)2.0,
                     discord_token = "",
                     channel_id = ""
     });
@@ -108,7 +126,6 @@ namespace OpenCryptShot
                 Utilities.Write(ConsoleColor.Red, "config.json was missing and has been created. Please edit the file and restart the application.");
                 return null;
             }
-
             return JsonConvert.DeserializeObject<Config>(File.ReadAllText("config.json"));
         }
 
@@ -140,11 +157,11 @@ namespace OpenCryptShot
             }
         }
 
-        private static void ExecuteOrder(string symbol, decimal quantity, decimal strategyrisk, decimal sellStrategy, decimal maxsecondsbeforesell)
+        private static void ExecuteOrder(string symbol, decimal quantity, decimal strategyrisk, decimal sellStrategy, decimal maxsecondsbeforesell, BinanceClient client, WebCallResult<BinanceExchangeInfo> exchangeInfo) 
         {
             Stopwatch stopWatch = new Stopwatch();
             stopWatch.Start();
-            using (var client = new BinanceClient())
+            using (client)
             {
                 string pair = symbol.ToUpper() + "BTC";
                            WebCallResult<BinancePlacedOrder> order = client.Spot.Order.PlaceOrder(pair, OrderSide.Buy, OrderType.Market, null, quantity);
@@ -156,18 +173,20 @@ namespace OpenCryptShot
                             stopWatch.Stop();
                             var timestamp = DateTime.Now.ToFileTime();
                             TimeSpan ts = stopWatch.Elapsed;
+                decimal OrderQuantity = order.Data.QuantityFilled;
+                decimal paidPrice = 0;
+                if (order.Data.Fills != null)
+                {
+                    paidPrice = order.Data.Fills.Average(trade => trade.Price);
+                }
 
-                            string elapsedTime = String.Format("{0:00}:{1:00}:{2:00}.{3:00}",
-                                ts.Hours, ts.Minutes, ts.Seconds,
-                                ts.Milliseconds / 10);
-                            Console.WriteLine("RunTime " + elapsedTime);
-                            WebCallResult<BinanceExchangeInfo> exchangeInfo = client.Spot.System.GetExchangeInfo();
-                            if (!exchangeInfo.Success)
-                            {
-                                Utilities.Write(ConsoleColor.Red, $"ERROR! Could not exchange informations. Error code: " + exchangeInfo.Error?.Message);
-                                return;
-                            }
-
+                string elapsedTime = String.Format("{0:00}:{1:00}:{2:00}.{3:000}",
+                    ts.Hours, ts.Minutes, ts.Seconds,
+                    ts.Milliseconds);
+                Utilities.Write(ConsoleColor.Green, $"Order submitted, Got: {OrderQuantity} coins from {pair} at {paidPrice} in {elapsedTime}");
+                Stopwatch stopWatch2 = new Stopwatch();
+                stopWatch2.Start();
+                Console.WriteLine("RunTime " + elapsedTime);
                             BinanceSymbol symbolInfo = exchangeInfo.Data.Symbols.FirstOrDefault(s => s.QuoteAsset == "BTC" && s.BaseAsset == symbol.ToUpper());
                             if (symbolInfo == null)
                             {
@@ -178,17 +197,14 @@ namespace OpenCryptShot
                             decimal ticksize = symbolInfo.PriceFilter.TickSize;
                             while ((ticksize = ticksize * 10) < 1)
                                 ++symbolPrecision;
+                            stopWatch2.Stop();
+                TimeSpan ts2 = stopWatch2.Elapsed;
+                string elapsedTime2 = String.Format("{0:00}:{1:00}:{2:00}.{3:00}",
+                                    ts2.Hours, ts2.Minutes, ts2.Seconds,
+                                    ts2.Milliseconds / 10);
+                Console.WriteLine("RunTime " + elapsedTime2);
 
-
-                decimal paidPrice = 0;
-                           if (order.Data.Fills != null)
-                            {
-                                paidPrice = order.Data.Fills.Average(trade => trade.Price);
-                            }
-                    decimal OrderQuantity = order.Data.QuantityFilled;
-
-                    Utilities.Write(ConsoleColor.Green, $"Order submitted, Got: {OrderQuantity} coins from {pair} at {paidPrice}");
-                    decimal sellPriceRiskRatio = (decimal).95;
+                decimal sellPriceRiskRatio = (decimal).95;
                     decimal StartSellStrategy = sellStrategy;
                     decimal MaxSellStrategy = 1 - ((1 - sellStrategy) / 5);
                     decimal volasellmax = (decimal)1.0;
@@ -253,7 +269,12 @@ namespace OpenCryptShot
                                             ordersell = client.Spot.Order.PlaceOrder(pair, OrderSide.Sell, OrderType.Limit, OrderQuantity, price: Math.Round(priceResult2.Data.BestBidPrice * sellPriceRiskRatio, symbolPrecision), timeInForce: TimeInForce.GoodTillCancel);
                                         }
                                         usainsell = 1;
-                                        Utilities.Write(ConsoleColor.Green, "UsainBot PANIC SOLD successfully  " + OrderQuantity + " " + ordersell.Data.Symbol + $" sold at " + priceResult2.Data.BestBidPrice);
+                                        paidPrice = 0;
+                                        if (order.Data.Fills != null)
+                                        {
+                                            paidPrice = order.Data.Fills.Average(trade => trade.Price);
+                                        }
+                                    Utilities.Write(ConsoleColor.Green, "UsainBot PANIC SOLD successfully  " + OrderQuantity + " " + ordersell.Data.Symbol + $" sold at " + paidPrice);
                                         return;
                                             }
                                             else
@@ -317,7 +338,12 @@ namespace OpenCryptShot
                                             ordersell2 = client.Spot.Order.PlaceOrder(pair, OrderSide.Sell, OrderType.Limit, OrderQuantity, price: Math.Round(priceResult3.Data.BestBidPrice * sellPriceRiskRatio, symbolPrecision), timeInForce: TimeInForce.GoodTillCancel);
                                         }
                                         usainsell = 1;
-                                        Utilities.Write(ConsoleColor.Green, "UsainBot PANIC SOLD successfully  " + OrderQuantity + " " + ordersell2.Data.Symbol + $" sold at " + priceResult3.Data.BestBidPrice);
+                                    paidPrice = 0;
+                                    if (order.Data.Fills != null)
+                                    {
+                                        paidPrice = order.Data.Fills.Average(trade => trade.Price);
+                                    }
+                                    Utilities.Write(ConsoleColor.Green, "UsainBot PANIC SOLD successfully  " + OrderQuantity + " " + ordersell2.Data.Symbol + $" sold at " + paidPrice);
                                         return;
                                     }
                                     else
@@ -379,7 +405,12 @@ namespace OpenCryptShot
                                 ordersell2 = client.Spot.Order.PlaceOrder(pair, OrderSide.Sell, OrderType.Limit, OrderQuantity, price: Math.Round(priceResult3.Data.BestBidPrice * sellPriceRiskRatio, symbolPrecision), timeInForce: TimeInForce.GoodTillCancel);
                             }
                             usainsell = 1;
-                            Utilities.Write(ConsoleColor.Green, "UsainBot TIME SOLD successfully  " + OrderQuantity + " " + ordersell2.Data.Symbol + $" sold at " + priceResult3.Data.BestBidPrice);
+                        paidPrice = 0;
+                        if (order.Data.Fills != null)
+                        {
+                            paidPrice = order.Data.Fills.Average(trade => trade.Price);
+                        }
+                        Utilities.Write(ConsoleColor.Green, "UsainBot TIME SOLD successfully  " + OrderQuantity + " " + ordersell2.Data.Symbol + $" sold at " + paidPrice);
                             return;
                         }
                     }
