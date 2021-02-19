@@ -212,6 +212,7 @@ namespace OpenCryptShot
                     List<decimal> tab = new List<decimal>();
                     int count = -1; 
                     int x = 0;
+                    int n = 1;
                     int usainsell = 0;
                     int imincharge = 0;
                     Thread t = new Thread(NewThread);
@@ -366,20 +367,22 @@ namespace OpenCryptShot
                                 WebCallResult<IEnumerable<BinanceCancelledId>> orders = client.Spot.Order.CancelAllOpenOrders(symbol: pair);
                                 if (!orders.Success)
                                 {
-                                    if (x == 0)
-                                    {
-                                        x = 1;
-                                        Utilities.Write(ConsoleColor.Red, $"ERROR! Could not remove orders. Error code: " + orders.Error?.Message);
-                                    }
-                                    else
-                                    {
-                                        x = 2;
-                                        Utilities.Write(ConsoleColor.Red, "StopLoss executed : " + orders.Error?.Message);
-                                        return;
-                                    }
+                                    if (n == 0)
+                                        if (x == 0)
+                                        {
+                                            x = 1;
+                                            Utilities.Write(ConsoleColor.Red, $"ERROR! Could not remove orders. Error code: " + orders.Error?.Message);
+                                        }
+                                        else
+                                        {
+                                            x = 2;
+                                            Utilities.Write(ConsoleColor.Red, "StopLoss executed : " + orders.Error?.Message);
+                                            return;
+                                        }
                                 }
                                 else
                                     Utilities.Write(ConsoleColor.Blue, $"Orders successfully removed.");
+                                n = 0;
                                 //     WebCallResult<BinanceCanceledOrder> cancel = client.Spot.Order.CancelOrder(pair);
                                 if (usainsell == 0)
                                 {
@@ -401,7 +404,7 @@ namespace OpenCryptShot
                             WebCallResult<BinancePlacedOrder> ordersell2 = client.Spot.Order.PlaceOrder(pair, OrderSide.Sell, OrderType.Limit, OrderQuantity, price: Math.Round(priceResult3.Data.BestBidPrice * sellPriceRiskRatio, symbolPrecision), timeInForce: TimeInForce.GoodTillCancel);
                             while (!ordersell2.Success)
                             {
-                                Utilities.Write(ConsoleColor.Red, $"ERROR! Could not place the Market order sell, trying another time. Error code: " + ordersell2.Error?.Message);
+                                Utilities.Write(ConsoleColor.Red, $"ERROR! Could not place the Order sell, trying another time. Error code: " + ordersell2.Error?.Message);
                                 ordersell2 = client.Spot.Order.PlaceOrder(pair, OrderSide.Sell, OrderType.Limit, OrderQuantity, price: Math.Round(priceResult3.Data.BestBidPrice * sellPriceRiskRatio, symbolPrecision), timeInForce: TimeInForce.GoodTillCancel);
                             }
                             usainsell = 1;
