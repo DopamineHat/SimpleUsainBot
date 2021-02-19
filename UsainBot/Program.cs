@@ -23,6 +23,8 @@ using CryptoExchange.Net.Objects;
 using CryptoExchange.Net.Sockets;
 using Newtonsoft.Json;
 using JsonSerializer = System.Text.Json.JsonSerializer;
+using System.Net.NetworkInformation;
+using System.Text;
 
 namespace OpenCryptShot
 {
@@ -69,6 +71,23 @@ namespace OpenCryptShot
             }
 
             Utilities.Write(ConsoleColor.Green, "Successfully logged in.");
+            Ping pingSender = new Ping();
+
+            // Create a buffer of 32 bytes of data to be transmitted.
+            string data = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+            byte[] buffer = Encoding.ASCII.GetBytes(data);
+
+            PingOptions options = new PingOptions(64, true);
+
+            // Send the request.
+            PingReply reply = pingSender.Send("quicksight.ap-northeast-1.amazonaws.com", 1000, buffer, options);
+
+            if (reply.Status == IPStatus.Success)
+                Console.WriteLine("RoundTrip time: {0}", reply.RoundtripTime + "ms");
+            else
+            {
+                Console.WriteLine(reply.Status);
+            }
 
             while (true)
             {
@@ -183,10 +202,7 @@ namespace OpenCryptShot
                 string elapsedTime = String.Format("{0:00}:{1:00}:{2:00}.{3:000}",
                     ts.Hours, ts.Minutes, ts.Seconds,
                     ts.Milliseconds);
-                Utilities.Write(ConsoleColor.Green, $"Order submitted, Got: {OrderQuantity} coins from {pair} at {paidPrice} in {elapsedTime}");
-                Stopwatch stopWatch2 = new Stopwatch();
-                stopWatch2.Start();
-                Console.WriteLine("RunTime " + elapsedTime);
+                Utilities.Write(ConsoleColor.Green, $"Order submitted and accepted, Got: {OrderQuantity} coins from {pair} at {paidPrice}, time: + {elapsedTime} ms");
                             BinanceSymbol symbolInfo = exchangeInfo.Data.Symbols.FirstOrDefault(s => s.QuoteAsset == "BTC" && s.BaseAsset == symbol.ToUpper());
                             if (symbolInfo == null)
                             {
@@ -197,14 +213,7 @@ namespace OpenCryptShot
                             decimal ticksize = symbolInfo.PriceFilter.TickSize;
                             while ((ticksize = ticksize * 10) < 1)
                                 ++symbolPrecision;
-                            stopWatch2.Stop();
-                TimeSpan ts2 = stopWatch2.Elapsed;
-                string elapsedTime2 = String.Format("{0:00}:{1:00}:{2:00}.{3:00}",
-                                    ts2.Hours, ts2.Minutes, ts2.Seconds,
-                                    ts2.Milliseconds / 10);
-                Console.WriteLine("RunTime " + elapsedTime2);
-
-                decimal sellPriceRiskRatio = (decimal).95;
+                    decimal sellPriceRiskRatio = (decimal).95;
                     decimal StartSellStrategy = sellStrategy;
                     decimal MaxSellStrategy = 1 - ((1 - sellStrategy) / 5);
                     decimal volasellmax = (decimal)1.0;
