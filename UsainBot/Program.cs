@@ -56,8 +56,8 @@ namespace UsainBot
                 Console.Read();
                 return;
             }
-            decimal strategyrisk = config.risktaking * (decimal)10.0;
-            decimal sellStrategy = config.risktaking * (decimal).03 + (decimal).8;
+            decimal strategyrisk = config.risktaking * (decimal)40.0;
+            decimal sellStrategy = (decimal).95 - config.risktaking * (decimal).03;
             decimal maxsecondsbeforesell = config.risktaking * (decimal)5.0;
             var client = new BinanceClient();
             Utilities.Write(ConsoleColor.Cyan, $"Loading exchange info...");
@@ -218,7 +218,7 @@ namespace UsainBot
                             decimal ticksize = symbolInfo.PriceFilter.TickSize;
                             while ((ticksize = ticksize * 10) < 1)
                                 ++symbolPrecision;
-                    decimal sellPriceRiskRatio = (decimal).95;
+                    decimal sellPriceRiskRatio = (decimal).98;
                     decimal StartSellStrategy = sellStrategy;
                     decimal MaxSellStrategy = 1 - ((1 - sellStrategy) / 5);
                     decimal volasellmax = (decimal)1.0;
@@ -245,7 +245,7 @@ namespace UsainBot
                                         tab.Add(priceResult2.Data.BestBidPrice);
                                      else
                                         return;
-                                    if (count % 10 == 0)
+                                    if (count % 10 == 0 && count > 20)
                                     {
                                         int countca = count;
                                         decimal espa = 0;
@@ -285,9 +285,9 @@ namespace UsainBot
                                         }
                                         usainsell = 1;
                                         paidPrice = 0;
-                                        if (order.Data.Fills != null)
+                                        if (ordersell.Data.Fills != null)
                                         {
-                                            paidPrice = order.Data.Fills.Average(trade => trade.Price);
+                                            paidPrice = ordersell.Data.Fills.Average(trade => trade.Price);
                                         }
                                     Utilities.Write(ConsoleColor.Green, "UsainBot PANIC SOLD successfully  " + OrderQuantity + " " + ordersell.Data.Symbol + $" sold at " + paidPrice);
                                         return;
@@ -314,7 +314,7 @@ namespace UsainBot
                                 tab.Add(tab[count - 1]);
                             }
                             Console.Title = $"Price for {pair} is {priceResult3.Data.BestBidPrice} to {priceResult3.Data.BestAskPrice} in iteration  " + count + "  negative volatility ratio is " + Math.Round(volasellmax , 2) + " stop limit is placed at " + currentstoploss;
-                            if (count % 10 == 0)
+                            if ((count + 5) % 10 == 0 && count > 20)
                             {
                                 int countc = count;
                                 decimal esp = 0;
@@ -354,9 +354,9 @@ namespace UsainBot
                                         }
                                         usainsell = 1;
                                     paidPrice = 0;
-                                    if (order.Data.Fills != null)
+                                    if (ordersell2.Data.Fills != null)
                                     {
-                                        paidPrice = order.Data.Fills.Average(trade => trade.Price);
+                                        paidPrice = ordersell2.Data.Fills.Average(trade => trade.Price);
                                     }
                                     Utilities.Write(ConsoleColor.Green, "UsainBot PANIC SOLD successfully  " + OrderQuantity + " " + ordersell2.Data.Symbol + $" sold at " + paidPrice);
                                         return;
@@ -407,7 +407,7 @@ namespace UsainBot
                                         return;
                                     }
                                     else
-                                        Utilities.Write(ConsoleColor.Blue, $"StopLimit Order submitted, stop limit price: {stopPrice}, sell price: {sellPrice}");
+                                        Utilities.Write(ConsoleColor.Blue, $"StopLoss Order submitted, stop loss price: {stopPrice}, sell price: {sellPrice}");
                                 }
                             }
                         }
@@ -423,9 +423,9 @@ namespace UsainBot
                             }
                             usainsell = 1;
                         paidPrice = 0;
-                        if (order.Data.Fills != null)
+                        if (ordersell2.Data.Fills != null)
                         {
-                            paidPrice = order.Data.Fills.Average(trade => trade.Price);
+                            paidPrice = ordersell2.Data.Fills.Average(trade => trade.Price);
                         }
                         Utilities.Write(ConsoleColor.Green, "UsainBot TIME SOLD successfully  " + OrderQuantity + " " + ordersell2.Data.Symbol + $" sold at " + paidPrice);
                             return;
