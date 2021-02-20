@@ -1,4 +1,4 @@
-﻿namespace OpenCryptShot
+﻿namespace UsainBot
 {
     public class Config
     {

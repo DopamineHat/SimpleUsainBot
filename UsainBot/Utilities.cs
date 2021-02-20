@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace OpenCryptShot
+namespace UsainBot
 {
     public static class Utilities
     {

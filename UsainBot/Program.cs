@@ -26,7 +26,7 @@ using JsonSerializer = System.Text.Json.JsonSerializer;
 using System.Net.NetworkInformation;
 using System.Text;
 
-namespace OpenCryptShot
+namespace UsainBot
 {
     internal static class Program
     {
@@ -71,26 +71,30 @@ namespace OpenCryptShot
             }
 
             Utilities.Write(ConsoleColor.Green, "Successfully logged in.");
-            Ping pingSender = new Ping();
-
-            // Create a buffer of 32 bytes of data to be transmitted.
-            string data = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
-            byte[] buffer = Encoding.ASCII.GetBytes(data);
-
-            PingOptions options = new PingOptions(64, true);
-
-            // Send the request.
-            PingReply reply = pingSender.Send("quicksight.ap-northeast-1.amazonaws.com", 1000, buffer, options);
-
-            if (reply.Status == IPStatus.Success)
-                Console.WriteLine("RoundTrip time: {0}", reply.RoundtripTime + "ms");
-            else
-            {
-                Console.WriteLine(reply.Status);
-            }
-
             while (true)
             {
+                int closet3 = 0;
+                Thread t3 = new Thread(PingThread);
+                t3.Start();
+                void PingThread()
+                {
+                    while (closet3 == 0)
+                    {
+                        Ping pingSender = new Ping();
+
+                        // Create a buffer of 32 bytes of data to be transmitted.
+                        string data = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+                        byte[] buffer = Encoding.ASCII.GetBytes(data);
+
+                        PingOptions options = new PingOptions(64, true);
+
+                        // Send the request.
+                        PingReply reply = pingSender.Send("139.162.78.33", 1000, buffer, options);
+
+                        if (reply.Status == IPStatus.Success)
+                            Console.Title = "Ping to Tokyo: " + reply.RoundtripTime + "ms";
+                    }
+                }
                 string symbol;
                 if (config.channel_id.Length > 0 && config.discord_token.Length > 0)
                 {
@@ -116,6 +120,7 @@ namespace OpenCryptShot
                 if (string.IsNullOrEmpty(symbol))
                     return;
                 //Try to execute the order
+                closet3 = 1;
                 ExecuteOrder(symbol, config.quantity, strategyrisk, sellStrategy, maxsecondsbeforesell, client, exchangeInfo);
                 client = new BinanceClient();
                 exchangeInfo = client.Spot.System.GetExchangeInfo();
