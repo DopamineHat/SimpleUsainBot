@@ -62,7 +62,7 @@ namespace UsainBot
             var client = new BinanceClient();
             Utilities.Write(ConsoleColor.Cyan, $"Loading exchange info...");
             WebCallResult<BinanceExchangeInfo> exchangeInfo = client.Spot.System.GetExchangeInfo();
-            client.Spot.Order.PlaceOrder("ETHBTC" , OrderSide.Buy, OrderType.Market, null, 0);
+            client.Spot.Order.PlaceOrder("ETHBTC", OrderSide.Buy, OrderType.Market, null, 0);
             var t = exchangeInfo.Data.ServerTime;
             if (!exchangeInfo.Success)
             {
@@ -145,7 +145,7 @@ namespace UsainBot
                     risktaking = (decimal)2.0,
                     discord_token = "",
                     channel_id = ""
-    });
+                });
                 File.WriteAllText("config.json", json);
                 Utilities.Write(ConsoleColor.Red, "config.json was missing and has been created. Please edit the file and restart the application.");
                 return null;
@@ -156,7 +156,7 @@ namespace UsainBot
         private static string FindTicker(string discord_token, string channel_id)
         {
             Regex regex = new Regex(@"(\$)[a-zA-Z]{1,5}");
-            HttpWebRequest req = (HttpWebRequest)WebRequest.Create("https://discord.com/api/v8/channels/" + channel_id +"/messages?limit=1");
+            HttpWebRequest req = (HttpWebRequest)WebRequest.Create("https://discord.com/api/v8/channels/" + channel_id + "/messages?limit=1");
             req.Headers.Add("Authorization", discord_token);
             req.Accept = "*/*";
             req.ContentType = "application/json";
@@ -181,22 +181,22 @@ namespace UsainBot
             }
         }
 
-        private static void ExecuteOrder(string symbol, decimal quantity, decimal strategyrisk, decimal sellStrategy, decimal maxsecondsbeforesell, BinanceClient client, WebCallResult<BinanceExchangeInfo> exchangeInfo) 
+        private static void ExecuteOrder(string symbol, decimal quantity, decimal strategyrisk, decimal sellStrategy, decimal maxsecondsbeforesell, BinanceClient client, WebCallResult<BinanceExchangeInfo> exchangeInfo)
         {
             Stopwatch stopWatch = new Stopwatch();
             stopWatch.Start();
             using (client)
             {
                 string pair = symbol.ToUpper() + "BTC";
-                           WebCallResult<BinancePlacedOrder> order = client.Spot.Order.PlaceOrder(pair, OrderSide.Buy, OrderType.Market, null, quantity);
-                           if (!order.Success)
-                           {
-                               Utilities.Write(ConsoleColor.Red, $"ERROR! Could not place the Market order. Error code: " + order.Error?.Message);
-                               return;
-                           }
-                            stopWatch.Stop();
-                            var timestamp = DateTime.Now.ToFileTime();
-                            TimeSpan ts = stopWatch.Elapsed;
+                WebCallResult<BinancePlacedOrder> order = client.Spot.Order.PlaceOrder(pair, OrderSide.Buy, OrderType.Market, null, quantity);
+                if (!order.Success)
+                {
+                    Utilities.Write(ConsoleColor.Red, $"ERROR! Could not place the Market order. Error code: " + order.Error?.Message);
+                    return;
+                }
+                stopWatch.Stop();
+                var timestamp = DateTime.Now.ToFileTime();
+                TimeSpan ts = stopWatch.Elapsed;
                 decimal OrderQuantity = order.Data.QuantityFilled;
                 decimal paidPrice = 0;
                 if (order.Data.Fills != null)
@@ -208,229 +208,262 @@ namespace UsainBot
                     ts.Hours, ts.Minutes, ts.Seconds,
                     ts.Milliseconds);
                 Utilities.Write(ConsoleColor.Green, $"Order submitted and accepted, Got: {OrderQuantity} coins from {pair} at {paidPrice}, time: + {elapsedTime} ms");
-                            BinanceSymbol symbolInfo = exchangeInfo.Data.Symbols.FirstOrDefault(s => s.QuoteAsset == "BTC" && s.BaseAsset == symbol.ToUpper());
-                            if (symbolInfo == null)
+                BinanceSymbol symbolInfo = exchangeInfo.Data.Symbols.FirstOrDefault(s => s.QuoteAsset == "BTC" && s.BaseAsset == symbol.ToUpper());
+                if (symbolInfo == null)
+                {
+                    Utilities.Write(ConsoleColor.Red, $"ERROR! Could not get symbol informations.");
+                    return;
+                }
+                int symbolPrecision = 1;
+                decimal ticksize = symbolInfo.PriceFilter.TickSize;
+                while ((ticksize = ticksize * 10) < 1)
+                    ++symbolPrecision;
+                decimal sellPriceRiskRatio = (decimal).95;
+                decimal sellPriceAskRatio = (decimal).99;
+                decimal StartSellStrategy = sellStrategy;
+                decimal MaxSellStrategy = 1 - ((1 - sellStrategy) / 5);
+                decimal volasellmax = (decimal)1.0;
+                decimal currentstoploss = 0;
+                List<decimal> tab = new List<decimal>();
+                int count = -1;
+                int x = 0;
+                int n = 1;
+                int usainsell = 0;
+                int imincharge = 0;
+                Thread t = new Thread(NewThread);
+                t.Start();
+                WebCallResult<BinanceBookPrice> priceResult3 = client.Spot.Market.GetBookPrice(pair);
+                Thread t2 = new Thread(NewThread2);
+                t2.Start();
+                WebCallResult<BinanceBookPrice> priceResult2 = client.Spot.Market.GetBookPrice(pair);
+                void NewThread()
+                {
+                    while ((timestamp + maxsecondsbeforesell * 10000000) > DateTime.Now.ToFileTime() && x != 2)
+                    {
+                        count++;
+                        priceResult2 = client.Spot.Market.GetBookPrice(pair);
+                        if (priceResult2.Success)
+                            tab.Add(priceResult2.Data.BestBidPrice);
+                        else
+                            return;
+                        if (count % 10 == 0 && count > 20)
+                        {
+                            int countca = count;
+                            decimal espa = 0;
+                            int x2a = -1;
+                            while (--countca > 0 && ++x2a < 10)
                             {
-                                Utilities.Write(ConsoleColor.Red, $"ERROR! Could not get symbol informations.");
-                                return;
+                                espa += (tab[countca] - tab[countca - 1]) / 10;
                             }
-                            int symbolPrecision = 1;
-                            decimal ticksize = symbolInfo.PriceFilter.TickSize;
-                            while ((ticksize = ticksize * 10) < 1)
-                                ++symbolPrecision;
-                    decimal sellPriceRiskRatio = (decimal).98;
-                    decimal StartSellStrategy = sellStrategy;
-                    decimal MaxSellStrategy = 1 - ((1 - sellStrategy) / 5);
-                    decimal volasellmax = (decimal)1.0;
-                    decimal currentstoploss = 0;
-                    List<decimal> tab = new List<decimal>();
-                    int count = -1; 
-                    int x = 0;
-                    int n = 1;
-                    int usainsell = 0;
-                    int imincharge = 0;
-                    Thread t = new Thread(NewThread);
-                    t.Start();
-                    WebCallResult<BinanceBookPrice> priceResult3 = client.Spot.Market.GetBookPrice(pair);
-                    Thread t2 = new Thread(NewThread2);
-                    t2.Start();
-                    WebCallResult<BinanceBookPrice> priceResult2 = client.Spot.Market.GetBookPrice(pair);
-                             void NewThread()
-                             {
-                                 while ((timestamp + maxsecondsbeforesell * 10000000) > DateTime.Now.ToFileTime() && x != 2)
-                                 {
-                                     count++;
-                                     priceResult2 = client.Spot.Market.GetBookPrice(pair);
-                                     if (priceResult2.Success)
-                                        tab.Add(priceResult2.Data.BestBidPrice);
-                                     else
-                                        return;
-                                    if (count % 10 == 0 && count > 20)
+                            decimal esp2a = espa / 3;
+                            while (--countca > 0 && ++x2a < 30)
+                            {
+                                esp2a += (tab[countca] - tab[countca - 1]) / 30;
+                            }
+                            Utilities.Write(ConsoleColor.Green, $" {Math.Round(espa / priceResult2.Data.BestBidPrice * 100000, 2)}");
+                            Utilities.Write(ConsoleColor.Red, $" {Math.Round(esp2a / priceResult2.Data.BestBidPrice * 100000, 2)}");
+                            decimal volasell = (esp2a - espa) / priceResult2.Data.BestBidPrice * 100000;
+                            if (volasell > strategyrisk / 4)
+                            {
+                                Utilities.Write(ConsoleColor.Red, $" negative volatility detected at a {Math.Round(volasell, 2)} ratio");
+                                if (volasell < strategyrisk)
+                                {
+                                    if (volasell > volasellmax)
                                     {
-                                        int countca = count;
-                                        decimal espa = 0;
-                                        int x2a = -1;
-                                        while (--countca > 0 && ++x2a < 10)
-                                        {
-                                            espa += (tab[countca] - tab[countca - 1]) / 10;
-                                        }
-                                        decimal esp2a = espa / 3;
-                                        while (--countca > 0 && ++x2a < 30)
-                                        {
-                                            esp2a += (tab[countca] - tab[countca - 1]) / 30;
-                                        }
-                                        Utilities.Write(ConsoleColor.Green, $" {Math.Round(espa / priceResult2.Data.BestBidPrice * 100000, 2)}");
-                                        Utilities.Write(ConsoleColor.Red, $" {Math.Round(esp2a / priceResult2.Data.BestBidPrice * 100000, 2)}");
-                                        decimal volasell = (esp2a - espa) / priceResult2.Data.BestBidPrice * 100000;
-                                        if (volasell > strategyrisk / 4)
-                                        {
-                                            Utilities.Write(ConsoleColor.Red, $" negative volatility detected at a {Math.Round(volasell, 2)} ratio");
-                                    if (volasell < strategyrisk)
-                                    {
-                                        if (volasell > volasellmax)
-                                        {
-                                            volasellmax = volasell;
-                                            sellStrategy = Math.Round(StartSellStrategy + (decimal)Math.Pow((double)volasell / (double)strategyrisk, 1.5) * (MaxSellStrategy - StartSellStrategy), 3);
-                                        }
+                                        volasellmax = volasell;
+                                        sellStrategy = Math.Round(StartSellStrategy + (decimal)Math.Pow((double)volasell / (double)strategyrisk, 1.5) * (MaxSellStrategy - StartSellStrategy), 3);
                                     }
-                                    else if (usainsell == 0 && imincharge == 0)
+                                }
+                                else if (usainsell == 0 && imincharge == 0)
+                                {
+                                    imincharge = 1;
+                                    WebCallResult<IEnumerable<BinanceCancelledId>> orderspanic = client.Spot.Order.CancelAllOpenOrders(symbol: pair);
+                                    WebCallResult<BinancePlacedOrder> ordersell = client.Spot.Order.PlaceOrder(pair, OrderSide.Sell, OrderType.Limit, OrderQuantity, price: Math.Round(priceResult2.Data.BestAskPrice * sellPriceAskRatio - (decimal)0.00000001, symbolPrecision), timeInForce: TimeInForce.GoodTillCancel);
+                                    while (!ordersell.Success)
                                     {
-                                        imincharge = 1;
-                                        WebCallResult<IEnumerable<BinanceCancelledId>> orderspanic = client.Spot.Order.CancelAllOpenOrders(symbol: pair);
-                                        WebCallResult<BinancePlacedOrder> ordersell = client.Spot.Order.PlaceOrder(pair, OrderSide.Sell, OrderType.Limit, OrderQuantity, price: Math.Round(priceResult2.Data.BestBidPrice * sellPriceRiskRatio, symbolPrecision), timeInForce: TimeInForce.GoodTillCancel);
-                                        while (!ordersell.Success)
-                                        {
-                                            Utilities.Write(ConsoleColor.Red, $"ERROR! Could not place the Market order sell, trying another time. Error code: " + ordersell.Error?.Message);
-                                            ordersell = client.Spot.Order.PlaceOrder(pair, OrderSide.Sell, OrderType.Limit, OrderQuantity, price: Math.Round(priceResult2.Data.BestBidPrice * sellPriceRiskRatio, symbolPrecision), timeInForce: TimeInForce.GoodTillCancel);
-                                        }
-                                        usainsell = 1;
-                                        paidPrice = 0;
+                                        Utilities.Write(ConsoleColor.Red, $"ERROR! Could not place the Market order sell, trying another time. Error code: " + ordersell.Error?.Message);
+                                        ordersell = client.Spot.Order.PlaceOrder(pair, OrderSide.Sell, OrderType.Limit, OrderQuantity, price: Math.Round(priceResult2.Data.BestAskPrice * sellPriceAskRatio - (decimal)0.00000001, symbolPrecision), timeInForce: TimeInForce.GoodTillCancel);
+                                    }
+                                    Thread.Sleep(1000);
+                                    int y = 0;
+                                    while (y == 0)
+                                    {
                                         if (ordersell.Data.Fills != null)
                                         {
                                             paidPrice = ordersell.Data.Fills.Average(trade => trade.Price);
+                                            orderspanic = client.Spot.Order.CancelAllOpenOrders(symbol: pair);
+                                            ordersell = client.Spot.Order.PlaceOrder(pair, OrderSide.Sell, OrderType.Limit, OrderQuantity, price: Math.Round(priceResult2.Data.BestBidPrice * sellPriceRiskRatio, symbolPrecision), timeInForce: TimeInForce.GoodTillCancel); // for if the previous limit order is filled but not 100%
                                         }
+                                        else
+                                        {
+                                            priceResult2 = client.Spot.Market.GetBookPrice(pair);
+                                            orderspanic = client.Spot.Order.CancelAllOpenOrders(symbol: pair);
+                                            ordersell = client.Spot.Order.PlaceOrder(pair, OrderSide.Sell, OrderType.Limit, OrderQuantity, price: Math.Round(priceResult2.Data.BestAskPrice * sellPriceAskRatio - (decimal)0.00000001, symbolPrecision), timeInForce: TimeInForce.GoodTillCancel);
+                                        }
+                                        y = 1;
+                                    }
+                                    usainsell = 1;
+                                    paidPrice = 0;
                                     Utilities.Write(ConsoleColor.Green, "UsainBot PANIC SOLD successfully  " + OrderQuantity + " " + ordersell.Data.Symbol + $" sold at " + paidPrice);
-                                        return;
-                                            }
-                                            else
-                                                return;
-                                        }
-                                    }
-                                    Console.Title = $"Price for {pair} is {priceResult2.Data.BestBidPrice} to {priceResult2.Data.BestAskPrice} in iteration  " + count + "  negative volatility ratio is " + Math.Round(volasellmax, 2) + " stop limit is placed at " + currentstoploss;
-                                 }
-                             }
-                    void NewThread2()
+                                    return;
+                                }
+                                else
+                                    return;
+                            }
+                        }
+                        Console.Title = $"Price for {pair} is {priceResult2.Data.BestBidPrice} to {priceResult2.Data.BestAskPrice} in iteration  " + count + "  negative volatility ratio is " + Math.Round(volasellmax, 2) + " stop limit is placed at " + currentstoploss;
+                    }
+                }
+                void NewThread2()
+                {
+                    while ((timestamp + maxsecondsbeforesell * 10000000) > DateTime.Now.ToFileTime() && x != 2)
                     {
-                        while ((timestamp + maxsecondsbeforesell * 10000000) > DateTime.Now.ToFileTime() && x != 2)
+                        count++;
+                        try
                         {
-                            count++;
-                            try
+                            priceResult3 = client.Spot.Market.GetBookPrice(pair);
+                            tab.Add(priceResult3.Data.BestBidPrice);
+                        }
+                        catch (Exception e)
+                        {
+                            tab.Add(tab[count - 1]);
+                        }
+                        Console.Title = $"Price for {pair} is {priceResult3.Data.BestBidPrice} to {priceResult3.Data.BestAskPrice} in iteration  " + count + "  negative volatility ratio is " + Math.Round(volasellmax, 2) + " stop limit is placed at " + currentstoploss;
+                        if ((count + 5) % 10 == 0 && count > 20)
+                        {
+                            int countc = count;
+                            decimal esp = 0;
+                            int x2 = -1;
+                            while (--countc > 0 && ++x2 < 10)
                             {
-                                priceResult3 = client.Spot.Market.GetBookPrice(pair);
-                                tab.Add(priceResult3.Data.BestBidPrice);
+                                esp += (tab[countc] - tab[countc - 1]) / 10;
                             }
-                            catch (Exception e)
+                            decimal esp2 = esp / 3;
+                            while (--countc > 0 && ++x2 < 30)
                             {
-                                tab.Add(tab[count - 1]);
+                                esp2 += (tab[countc] - tab[countc - 1]) / 30;
                             }
-                            Console.Title = $"Price for {pair} is {priceResult3.Data.BestBidPrice} to {priceResult3.Data.BestAskPrice} in iteration  " + count + "  negative volatility ratio is " + Math.Round(volasellmax , 2) + " stop limit is placed at " + currentstoploss;
-                            if ((count + 5) % 10 == 0 && count > 20)
+                            Utilities.Write(ConsoleColor.Green, $" {Math.Round(esp / priceResult3.Data.BestBidPrice * 100000, 2)}");
+                            Utilities.Write(ConsoleColor.Red, $" {Math.Round(esp2 / priceResult3.Data.BestBidPrice * 100000, 2)}");
+                            decimal volasell = (esp2 - esp) / priceResult3.Data.BestBidPrice * 100000;
+                            if (volasell > strategyrisk / 4)
                             {
-                                int countc = count;
-                                decimal esp = 0;
-                                int x2 = -1;
-                                while (--countc > 0 && ++x2 < 10)
+                                Utilities.Write(ConsoleColor.Red, $" negative volatility detected at a {Math.Round(volasell, 2)} ratio");
+                                if (volasell < strategyrisk)
                                 {
-                                    esp += (tab[countc] - tab[countc - 1]) / 10;
-                                }
-                                decimal esp2 = esp / 3;
-                                while (--countc > 0 && ++x2 < 30)
-                                {
-                                    esp2 += (tab[countc] - tab[countc - 1]) / 30;
-                                }
-                                Utilities.Write(ConsoleColor.Green, $" {Math.Round(esp / priceResult3.Data.BestBidPrice * 100000, 2)}");
-                                Utilities.Write(ConsoleColor.Red, $" {Math.Round(esp2 / priceResult3.Data.BestBidPrice * 100000, 2)}");
-                                decimal volasell = (esp2 - esp) / priceResult3.Data.BestBidPrice * 100000;
-                                if (volasell > strategyrisk / 4)
-                                {
-                                    Utilities.Write(ConsoleColor.Red, $" negative volatility detected at a {Math.Round(volasell, 2)} ratio");
-                                    if (volasell < strategyrisk)
+                                    if (volasell > volasellmax)
                                     {
-                                        if (volasell > volasellmax)
+                                        volasellmax = volasell;
+                                        sellStrategy = Math.Round(StartSellStrategy + (decimal)Math.Pow((double)volasell / (double)strategyrisk, 1.5) * (MaxSellStrategy - StartSellStrategy), 3);
+                                    }
+                                }
+                                else if (usainsell == 0 && imincharge == 0)
+                                {
+                                    imincharge = 1;
+                                    WebCallResult<IEnumerable<BinanceCancelledId>> orderspanic = client.Spot.Order.CancelAllOpenOrders(symbol: pair);
+                                    WebCallResult<BinancePlacedOrder> ordersell2 = client.Spot.Order.PlaceOrder(pair, OrderSide.Sell, OrderType.Limit, OrderQuantity, price: Math.Round(priceResult3.Data.BestAskPrice * sellPriceAskRatio - (decimal)0.00000001, symbolPrecision), timeInForce: TimeInForce.GoodTillCancel);
+                                    while (!ordersell2.Success)
+                                    {
+                                        Utilities.Write(ConsoleColor.Red, $"ERROR! Could not place the Market order sell, trying another time. Error code: " + ordersell2.Error?.Message);
+                                        ordersell2 = client.Spot.Order.PlaceOrder(pair, OrderSide.Sell, OrderType.Limit, OrderQuantity, price: Math.Round(priceResult3.Data.BestAskPrice * sellPriceAskRatio - (decimal)0.00000001, symbolPrecision), timeInForce: TimeInForce.GoodTillCancel);
+                                    }
+                                    Thread.Sleep(1000);
+                                    int y = 0;
+                                    while (y == 0)
+                                    {
+                                        if (ordersell2.Data.Fills != null)
                                         {
-                                            volasellmax = volasell;
-                                            sellStrategy = Math.Round(StartSellStrategy + (decimal)Math.Pow((double)volasell / (double)strategyrisk, 1.5) * (MaxSellStrategy - StartSellStrategy), 3);
+                                            paidPrice = ordersell2.Data.Fills.Average(trade => trade.Price);
+                                            orderspanic = client.Spot.Order.CancelAllOpenOrders(symbol: pair);
+                                            ordersell2 = client.Spot.Order.PlaceOrder(pair, OrderSide.Sell, OrderType.Limit, OrderQuantity, price: Math.Round(priceResult3.Data.BestBidPrice * sellPriceRiskRatio, symbolPrecision), timeInForce: TimeInForce.GoodTillCancel); // for if the previous limit order is filled but not 100%
+                                            y = 1;
+                                        }
+                                        else
+                                        {
+                                            priceResult3 = client.Spot.Market.GetBookPrice(pair);
+                                            orderspanic = client.Spot.Order.CancelAllOpenOrders(symbol: pair);
+                                            ordersell2 = client.Spot.Order.PlaceOrder(pair, OrderSide.Sell, OrderType.Limit, OrderQuantity, price: Math.Round(priceResult3.Data.BestAskPrice * sellPriceAskRatio - (decimal)0.00000001, symbolPrecision), timeInForce: TimeInForce.GoodTillCancel);
                                         }
                                     }
-                                    else if (usainsell == 0 && imincharge == 0)
-                                    {
-                                        imincharge = 1;
-                                        WebCallResult<IEnumerable<BinanceCancelledId>> orderspanic2 = client.Spot.Order.CancelAllOpenOrders(symbol: pair);
-                                        WebCallResult<BinancePlacedOrder> ordersell2 = client.Spot.Order.PlaceOrder(pair, OrderSide.Sell, OrderType.Limit, OrderQuantity, price: Math.Round(priceResult3.Data.BestBidPrice * sellPriceRiskRatio, symbolPrecision), timeInForce: TimeInForce.GoodTillCancel);
-                                        while (!ordersell2.Success)
-                                        {
-                                            Utilities.Write(ConsoleColor.Red, $"ERROR! Could not place the Market order sell, trying another time. Error code: " + ordersell2.Error?.Message);
-                                            ordersell2 = client.Spot.Order.PlaceOrder(pair, OrderSide.Sell, OrderType.Limit, OrderQuantity, price: Math.Round(priceResult3.Data.BestBidPrice * sellPriceRiskRatio, symbolPrecision), timeInForce: TimeInForce.GoodTillCancel);
-                                        }
-                                        usainsell = 1;
+                                    usainsell = 1;
                                     paidPrice = 0;
                                     if (ordersell2.Data.Fills != null)
                                     {
                                         paidPrice = ordersell2.Data.Fills.Average(trade => trade.Price);
                                     }
                                     Utilities.Write(ConsoleColor.Green, "UsainBot PANIC SOLD successfully  " + OrderQuantity + " " + ordersell2.Data.Symbol + $" sold at " + paidPrice);
-                                        return;
-                                    }
-                                    else
-                                        return;
-                                }
-                            }
-
-                        }
-                    }
-                    while (sellStrategy <= MaxSellStrategy && sellStrategy >= StartSellStrategy && usainsell == 0)
-                    {
-                        if ((timestamp + (decimal)1.0 * 10000000 * maxsecondsbeforesell) > DateTime.Now.ToFileTime())
-                        {
-                            priceResult2 = client.Spot.Market.GetBookPrice(pair);
-                            decimal stopPrice = Math.Round(priceResult2.Data.BestBidPrice * sellStrategy, symbolPrecision);
-                            if (stopPrice > currentstoploss)
-                            {
-                                currentstoploss = stopPrice;
-                                decimal sellPrice = Math.Round(stopPrice * sellPriceRiskRatio, symbolPrecision);
-                                WebCallResult<IEnumerable<BinanceCancelledId>> orders = client.Spot.Order.CancelAllOpenOrders(symbol: pair);
-                                if (!orders.Success)
-                                {
-                                    if (n == 0)
-                                        if (x == 0)
-                                        {
-                                            x = 1;
-                                            Utilities.Write(ConsoleColor.Red, $"ERROR! Could not remove orders. Error code: " + orders.Error?.Message);
-                                        }
-                                        else
-                                        {
-                                            x = 2;
-                                            Utilities.Write(ConsoleColor.Red, "StopLoss executed : " + orders.Error?.Message);
-                                            return;
-                                        }
+                                    return;
                                 }
                                 else
-                                    Utilities.Write(ConsoleColor.Blue, $"Orders successfully removed.");
-                                n = 0;
-                                //     WebCallResult<BinanceCanceledOrder> cancel = client.Spot.Order.CancelOrder(pair);
-                                if (usainsell == 0)
-                                {
-                                    WebCallResult<BinancePlacedOrder> panicsell = client.Spot.Order.PlaceOrder(pair, OrderSide.Sell, OrderType.StopLossLimit, OrderQuantity, price: sellPrice, timeInForce: TimeInForce.GoodTillCancel, stopPrice: stopPrice);
-                                    if (!panicsell.Success)
-                                    {
-                                        Utilities.Write(ConsoleColor.Red, $"ERROR! Could not place the StopLimit order. Error code: " + panicsell.Error?.Message);
-                                        return;
-                                    }
-                                    else
-                                        Utilities.Write(ConsoleColor.Blue, $"StopLoss Order submitted, stop loss price: {stopPrice}, sell price: {sellPrice}");
-                                }
+                                    return;
                             }
                         }
-                        else
+
+                    }
+                }
+                while (sellStrategy <= MaxSellStrategy && sellStrategy >= StartSellStrategy && usainsell == 0 && imincharge == 0)
+                {
+                    if ((timestamp + (decimal)1.0 * 10000000 * maxsecondsbeforesell) > DateTime.Now.ToFileTime())
+                    {
+                        priceResult2 = client.Spot.Market.GetBookPrice(pair);
+                        decimal stopPrice = Math.Round(priceResult2.Data.BestBidPrice * sellStrategy, symbolPrecision);
+                        if (stopPrice > currentstoploss)
                         {
-                            imincharge = 1;
-                            WebCallResult<IEnumerable<BinanceCancelledId>> orderspanic2 = client.Spot.Order.CancelAllOpenOrders(symbol: pair);
-                            WebCallResult<BinancePlacedOrder> ordersell2 = client.Spot.Order.PlaceOrder(pair, OrderSide.Sell, OrderType.Limit, OrderQuantity, price: Math.Round(priceResult3.Data.BestBidPrice * sellPriceRiskRatio, symbolPrecision), timeInForce: TimeInForce.GoodTillCancel);
-                            while (!ordersell2.Success)
+                            currentstoploss = stopPrice;
+                            decimal sellPrice = Math.Round(stopPrice * sellPriceRiskRatio, symbolPrecision);
+                            WebCallResult<IEnumerable<BinanceCancelledId>> orders = client.Spot.Order.CancelAllOpenOrders(symbol: pair);
+                            if (!orders.Success)
                             {
-                                Utilities.Write(ConsoleColor.Red, $"ERROR! Could not place the Order sell, trying another time. Error code: " + ordersell2.Error?.Message);
-                                ordersell2 = client.Spot.Order.PlaceOrder(pair, OrderSide.Sell, OrderType.Limit, OrderQuantity, price: Math.Round(priceResult3.Data.BestBidPrice * sellPriceRiskRatio, symbolPrecision), timeInForce: TimeInForce.GoodTillCancel);
+                                if (n == 0)
+                                    if (x == 0)
+                                    {
+                                        x = 1;
+                                        Utilities.Write(ConsoleColor.Red, $"ERROR! Could not remove orders. Error code: " + orders.Error?.Message);
+                                    }
+                                    else
+                                    {
+                                        x = 2;
+                                        Utilities.Write(ConsoleColor.Red, "StopLoss executed : " + orders.Error?.Message);
+                                        return;
+                                    }
                             }
-                            usainsell = 1;
+                            else
+                                Utilities.Write(ConsoleColor.Blue, $"Orders successfully removed.");
+                            n = 0;
+                            if (usainsell == 0)
+                            {
+                                WebCallResult<BinancePlacedOrder> panicsell = client.Spot.Order.PlaceOrder(pair, OrderSide.Sell, OrderType.StopLossLimit, OrderQuantity, price: sellPrice, timeInForce: TimeInForce.GoodTillCancel, stopPrice: stopPrice);
+                                if (!panicsell.Success)
+                                {
+                                    Utilities.Write(ConsoleColor.Red, $"ERROR! Could not place the StopLimit order. Error code: " + panicsell.Error?.Message);
+                                    return;
+                                }
+                                else
+                                    Utilities.Write(ConsoleColor.Blue, $"StopLoss Order submitted, stop loss price: {stopPrice}, sell price: {sellPrice}");
+                            }
+                        }
+                    }
+                    else
+                    {
+                        imincharge = 1;
+                        WebCallResult<IEnumerable<BinanceCancelledId>> orderspanic2 = client.Spot.Order.CancelAllOpenOrders(symbol: pair);
+                        WebCallResult<BinancePlacedOrder> ordersell2 = client.Spot.Order.PlaceOrder(pair, OrderSide.Sell, OrderType.Limit, OrderQuantity, price: Math.Round(priceResult3.Data.BestBidPrice * sellPriceRiskRatio, symbolPrecision), timeInForce: TimeInForce.GoodTillCancel);
+                        while (!ordersell2.Success)
+                        {
+                            Utilities.Write(ConsoleColor.Red, $"ERROR! Could not place the Order sell, trying another time. Error code: " + ordersell2.Error?.Message);
+                            ordersell2 = client.Spot.Order.PlaceOrder(pair, OrderSide.Sell, OrderType.Limit, OrderQuantity, price: Math.Round(priceResult3.Data.BestBidPrice * sellPriceRiskRatio, symbolPrecision), timeInForce: TimeInForce.GoodTillCancel);
+                        }
+                        usainsell = 1;
                         paidPrice = 0;
                         if (ordersell2.Data.Fills != null)
                         {
                             paidPrice = ordersell2.Data.Fills.Average(trade => trade.Price);
                         }
                         Utilities.Write(ConsoleColor.Green, "UsainBot TIME SOLD successfully  " + OrderQuantity + " " + ordersell2.Data.Symbol + $" sold at " + paidPrice);
-                            return;
-                        }
+                        return;
                     }
+                }
+                Thread.Sleep(2000);
             }
         }
     }
