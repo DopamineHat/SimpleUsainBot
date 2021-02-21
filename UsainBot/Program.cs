@@ -56,7 +56,7 @@ namespace UsainBot
                 Console.Read();
                 return;
             }
-            decimal strategyrisk = config.risktaking * (decimal)40.0;
+            decimal strategyrisk = config.risktaking * (decimal)50.0;
             decimal sellStrategy = (decimal).95 - config.risktaking * (decimal).03;
             decimal maxsecondsbeforesell = config.risktaking * (decimal)5.0;
             var client = new BinanceClient();
@@ -155,7 +155,7 @@ namespace UsainBot
 
         private static string FindTicker(string discord_token, string channel_id)
         {
-            Regex regex = new Regex(@"(\$)[a-zA-Z]{1,5}");
+            Regex regex = new Regex(@"(\#)[a-zA-Z]{1,5}");
             HttpWebRequest req = (HttpWebRequest)WebRequest.Create("https://discord.com/api/v8/channels/" + channel_id + "/messages?limit=1");
             req.Headers.Add("Authorization", discord_token);
             req.Accept = "*/*";
@@ -238,7 +238,7 @@ namespace UsainBot
                 WebCallResult<BinanceBookPrice> priceResult2 = client.Spot.Market.GetBookPrice(pair);
                 void NewThread()
                 {
-                    while ((timestamp + maxsecondsbeforesell * 10000000) > DateTime.Now.ToFileTime() && x != 2)
+                    while ((timestamp + maxsecondsbeforesell * 10000000) > DateTime.Now.ToFileTime() && x != 2 && imincharge == 0)
                     {
                         count++;
                         priceResult2 = client.Spot.Market.GetBookPrice(pair);
@@ -246,19 +246,19 @@ namespace UsainBot
                             tab.Add(priceResult2.Data.BestBidPrice);
                         else
                             return;
-                        if (count % 10 == 0 && count > 20)
+                        if (count % 20 == 0 && count > 50)
                         {
                             int countca = count;
                             decimal espa = 0;
                             int x2a = -1;
-                            while (--countca > 0 && ++x2a < 10)
+                            while (--countca > 0 && ++x2a < 20)
                             {
-                                espa += (tab[countca] - tab[countca - 1]) / 10;
+                                espa += (tab[countca] - tab[countca - 1]) / 20;
                             }
                             decimal esp2a = espa / 3;
-                            while (--countca > 0 && ++x2a < 30)
+                            while (--countca > 0 && ++x2a < 60)
                             {
-                                esp2a += (tab[countca] - tab[countca - 1]) / 30;
+                                esp2a += (tab[countca] - tab[countca - 1]) / 60;
                             }
                             Utilities.Write(ConsoleColor.Green, $" {Math.Round(espa / priceResult2.Data.BestBidPrice * 100000, 2)}");
                             Utilities.Write(ConsoleColor.Red, $" {Math.Round(esp2a / priceResult2.Data.BestBidPrice * 100000, 2)}");
@@ -316,7 +316,7 @@ namespace UsainBot
                 }
                 void NewThread2()
                 {
-                    while ((timestamp + maxsecondsbeforesell * 10000000) > DateTime.Now.ToFileTime() && x != 2)
+                    while ((timestamp + maxsecondsbeforesell * 10000000) > DateTime.Now.ToFileTime() && x != 2 && imincharge == 0)
                     {
                         count++;
                         try
@@ -329,19 +329,19 @@ namespace UsainBot
                             tab.Add(tab[count - 1]);
                         }
                         Console.Title = $"Price for {pair} is {priceResult3.Data.BestBidPrice} to {priceResult3.Data.BestAskPrice} in iteration  " + count + "  negative volatility ratio is " + Math.Round(volasellmax, 2) + " stop limit is placed at " + currentstoploss;
-                        if ((count + 5) % 10 == 0 && count > 20)
+                        if ((count + 10) % 20 == 0 && count > 50)
                         {
                             int countc = count;
                             decimal esp = 0;
                             int x2 = -1;
-                            while (--countc > 0 && ++x2 < 10)
+                            while (--countc > 0 && ++x2 < 20)
                             {
-                                esp += (tab[countc] - tab[countc - 1]) / 10;
+                                esp += (tab[countc] - tab[countc - 1]) / 20;
                             }
                             decimal esp2 = esp / 3;
-                            while (--countc > 0 && ++x2 < 30)
+                            while (--countc > 0 && ++x2 < 60)
                             {
-                                esp2 += (tab[countc] - tab[countc - 1]) / 30;
+                                esp2 += (tab[countc] - tab[countc - 1]) / 60;
                             }
                             Utilities.Write(ConsoleColor.Green, $" {Math.Round(esp / priceResult3.Data.BestBidPrice * 100000, 2)}");
                             Utilities.Write(ConsoleColor.Red, $" {Math.Round(esp2 / priceResult3.Data.BestBidPrice * 100000, 2)}");
