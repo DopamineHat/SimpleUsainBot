@@ -71,6 +71,7 @@ namespace UsainBot
             }
 
             Utilities.Write(ConsoleColor.Green, "Successfully logged in.");
+            int red = 0;
             while (true)
             {
                 int closet3 = 0;
@@ -96,7 +97,7 @@ namespace UsainBot
                     }
                 }
                 string symbol;
-                if (config.channel_id.Length > 0 && config.discord_token.Length > 0)
+                if (config.channel_id.Length > 0 && config.discord_token.Length > 0 && red == 0)
                 {
                     symbol = null;
                     Utilities.Write(ConsoleColor.Yellow, "Looking for ticker...");
@@ -105,6 +106,7 @@ namespace UsainBot
                         symbol = FindTicker(config.discord_token, config.channel_id);
                         Thread.Sleep(1000);
                     }
+                    red = 1;
                     Utilities.Write(ConsoleColor.Green, "Found ticker " + symbol);
                     Console.ForegroundColor = ConsoleColor.White;
                     symbol = symbol.Remove(0, 1);
