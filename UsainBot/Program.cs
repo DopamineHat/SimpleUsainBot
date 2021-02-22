@@ -157,7 +157,7 @@ namespace UsainBot
 
         private static string FindTicker(string discord_token, string channel_id)
         {
-            Regex regex = new Regex(@"(\#)[a-zA-Z]{1,5}");
+            Regex regex = new Regex(@"(\$)[a-zA-Z]{1,5}");
             HttpWebRequest req = (HttpWebRequest)WebRequest.Create("https://discord.com/api/v8/channels/" + channel_id + "/messages?limit=1");
             req.Headers.Add("Authorization", discord_token);
             req.Accept = "*/*";
