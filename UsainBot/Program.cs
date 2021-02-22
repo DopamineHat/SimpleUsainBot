@@ -56,7 +56,7 @@ namespace UsainBot
                 Console.Read();
                 return;
             }
-            decimal strategyrisk = Math.Round((decimal)Math.Pow((double)config.risktaking,  1.5) * (decimal)20.0, 3);
+            decimal strategyrisk = Math.Round((decimal)Math.Pow((double)config.risktaking,  1.5), 3);
             decimal sellStrategy = Math.Round((decimal).95 - config.risktaking * (decimal).03, 3);
             decimal maxsecondsbeforesell = config.risktaking * (decimal)5.0;
             var client = new BinanceClient();
@@ -142,7 +142,7 @@ namespace UsainBot
                     apiKey = "",
                     apiSecret = "",
                     quantity = (decimal)0.00025,
-                    risktaking = (decimal)2.0,
+                    risktaking = (decimal)3.0,
                     discord_token = "",
                     channel_id = ""
                 });
@@ -222,7 +222,7 @@ namespace UsainBot
                 decimal sellPriceAskRatio = (decimal).995;
                 decimal StartSellStrategy = sellStrategy;
                 decimal MaxSellStrategy = 1 - ((1 - sellStrategy) / 5);
-                decimal volasellmax = (decimal).2;
+                decimal volasellmax = (decimal).01;
                 decimal currentstoploss = 0;
                 List<decimal> tab = new List<decimal>();
                 int count = -1;
@@ -262,7 +262,7 @@ namespace UsainBot
                             }
                             Utilities.Write(ConsoleColor.Green, $" {Math.Round(espa / priceResult2.Data.BestBidPrice * 100000, 2)}");
                             Utilities.Write(ConsoleColor.Red, $" {Math.Round(esp2a / priceResult2.Data.BestBidPrice * 100000, 2)}");
-                            decimal volasell = (esp2a - espa) / priceResult2.Data.BestBidPrice * 10000 * (decimal)Math.Pow(count, .3);
+                            decimal volasell = (esp2a - espa) / priceResult2.Data.BestBidPrice * 100 * (decimal)Math.Pow(count, .7);
                             if (volasell > strategyrisk / 4)
                             {
                                 Utilities.Write(ConsoleColor.Red, $" negative volatility detected at a {Math.Round(volasell, 2)} ratio");
@@ -310,7 +310,7 @@ namespace UsainBot
                                         y = 1;
                                     }
                                     usainsell = 1;
-                                    Utilities.Write(ConsoleColor.Green, "UsainBot AI SOLD successfully  " + OrderQuantity + " " + ordersell.Data.Symbol + $" sold at " + paidPrice);
+                                    Utilities.Write(ConsoleColor.Green, "UsainBot AI SOLD successfully  " + OrderQuantity + " " + ordersell.Data.Symbol + $" at " + paidPrice);
                                     return;
                                 }
                                 else
@@ -351,7 +351,7 @@ namespace UsainBot
                             }
                             Utilities.Write(ConsoleColor.Green, $" {Math.Round(esp / priceResult3.Data.BestBidPrice * 100000, 2)}");
                             Utilities.Write(ConsoleColor.Red, $" {Math.Round(esp2 / priceResult3.Data.BestBidPrice * 100000, 2)}");
-                            decimal volasell = (esp2 - esp) / priceResult3.Data.BestBidPrice * 10000 * (decimal)Math.Pow(count, .3);
+                            decimal volasell = (esp2 - esp) / priceResult3.Data.BestBidPrice * 100 * (decimal)Math.Pow(count, .7);
                             if (volasell > strategyrisk / 4)
                             {
                                 Utilities.Write(ConsoleColor.Red, $" negative volatility detected at a {Math.Round(volasell, 2)} ratio");
@@ -399,7 +399,7 @@ namespace UsainBot
                                         }
                                     }
                                     usainsell = 1;
-                                    Utilities.Write(ConsoleColor.Green, "UsainBot AI SOLD successfully  " + OrderQuantity + " " + ordersell2.Data.Symbol + $" sold at " + paidPrice);
+                                    Utilities.Write(ConsoleColor.Green, "UsainBot AI SOLD successfully  " + OrderQuantity + " " + ordersell2.Data.Symbol + $" at " + paidPrice);
                                     return;
                                 }
                                 else
