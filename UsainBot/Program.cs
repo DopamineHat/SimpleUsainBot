@@ -56,8 +56,8 @@ namespace UsainBot
                 Console.Read();
                 return;
             }
-            decimal strategyrisk = config.risktaking * (decimal)50.0;
-            decimal sellStrategy = (decimal).95 - config.risktaking * (decimal).03;
+            decimal strategyrisk = Math.Round((decimal)Math.Pow((double)config.risktaking,  1.5) * (decimal)20.0, 3);
+            decimal sellStrategy = Math.Round((decimal).95 - config.risktaking * (decimal).03, 3);
             decimal maxsecondsbeforesell = config.risktaking * (decimal)5.0;
             var client = new BinanceClient();
             Utilities.Write(ConsoleColor.Cyan, $"Loading exchange info...");
@@ -219,10 +219,10 @@ namespace UsainBot
                 while ((ticksize = ticksize * 10) < 1)
                     ++symbolPrecision;
                 decimal sellPriceRiskRatio = (decimal).95;
-                decimal sellPriceAskRatio = (decimal).99;
+                decimal sellPriceAskRatio = (decimal).995;
                 decimal StartSellStrategy = sellStrategy;
                 decimal MaxSellStrategy = 1 - ((1 - sellStrategy) / 5);
-                decimal volasellmax = (decimal)1.0;
+                decimal volasellmax = (decimal).2;
                 decimal currentstoploss = 0;
                 List<decimal> tab = new List<decimal>();
                 int count = -1;
@@ -246,23 +246,23 @@ namespace UsainBot
                             tab.Add(priceResult2.Data.BestBidPrice);
                         else
                             return;
-                        if (count % 20 == 0 && count > 50)
+                        if (count % 10 == 0 && count > 25)
                         {
                             int countca = count;
                             decimal espa = 0;
                             int x2a = -1;
-                            while (--countca > 0 && ++x2a < 20)
+                            while (--countca > 0 && ++x2a < 10)
                             {
-                                espa += (tab[countca] - tab[countca - 1]) / 20;
+                                espa += (tab[countca] - tab[countca - 1]) / 10;
                             }
                             decimal esp2a = espa / 3;
-                            while (--countca > 0 && ++x2a < 60)
+                            while (--countca > 0 && ++x2a < 30)
                             {
-                                esp2a += (tab[countca] - tab[countca - 1]) / 60;
+                                esp2a += (tab[countca] - tab[countca - 1]) / 30;
                             }
                             Utilities.Write(ConsoleColor.Green, $" {Math.Round(espa / priceResult2.Data.BestBidPrice * 100000, 2)}");
                             Utilities.Write(ConsoleColor.Red, $" {Math.Round(esp2a / priceResult2.Data.BestBidPrice * 100000, 2)}");
-                            decimal volasell = (esp2a - espa) / priceResult2.Data.BestBidPrice * 100000;
+                            decimal volasell = (esp2a - espa) / priceResult2.Data.BestBidPrice * 10000 * (decimal)Math.Pow(count, .3);
                             if (volasell > strategyrisk / 4)
                             {
                                 Utilities.Write(ConsoleColor.Red, $" negative volatility detected at a {Math.Round(volasell, 2)} ratio");
@@ -292,7 +292,14 @@ namespace UsainBot
                                         {
                                             paidPrice = ordersell.Data.Fills.Average(trade => trade.Price);
                                             orderspanic = client.Spot.Order.CancelAllOpenOrders(symbol: pair);
-                                            ordersell = client.Spot.Order.PlaceOrder(pair, OrderSide.Sell, OrderType.Limit, OrderQuantity, price: Math.Round(priceResult2.Data.BestBidPrice * sellPriceRiskRatio, symbolPrecision), timeInForce: TimeInForce.GoodTillCancel); // for if the previous limit order is filled but not 100%
+                                            try
+                                            {
+                                                WebCallResult<BinancePlacedOrder> ordersell4 = client.Spot.Order.PlaceOrder(pair, OrderSide.Sell, OrderType.Limit, OrderQuantity, price: Math.Round(priceResult2.Data.BestBidPrice * sellPriceRiskRatio, symbolPrecision), timeInForce: TimeInForce.GoodTillCancel); // for if the previous limit order is filled but not 100%
+                                            }
+                                            finally
+                                            {
+                                                Utilities.Write(ConsoleColor.Green, "100% sold");
+                                            }
                                         }
                                         else
                                         {
@@ -303,8 +310,7 @@ namespace UsainBot
                                         y = 1;
                                     }
                                     usainsell = 1;
-                                    paidPrice = 0;
-                                    Utilities.Write(ConsoleColor.Green, "UsainBot PANIC SOLD successfully  " + OrderQuantity + " " + ordersell.Data.Symbol + $" sold at " + paidPrice);
+                                    Utilities.Write(ConsoleColor.Green, "UsainBot AI SOLD successfully  " + OrderQuantity + " " + ordersell.Data.Symbol + $" sold at " + paidPrice);
                                     return;
                                 }
                                 else
@@ -329,23 +335,23 @@ namespace UsainBot
                             tab.Add(tab[count - 1]);
                         }
                         Console.Title = $"Price for {pair} is {priceResult3.Data.BestBidPrice} to {priceResult3.Data.BestAskPrice} in iteration  " + count + "  negative volatility ratio is " + Math.Round(volasellmax, 2) + " stop limit is placed at " + currentstoploss;
-                        if ((count + 10) % 20 == 0 && count > 50)
+                        if ((count + 5) % 10 == 0 && count > 25)
                         {
                             int countc = count;
                             decimal esp = 0;
                             int x2 = -1;
-                            while (--countc > 0 && ++x2 < 20)
+                            while (--countc > 0 && ++x2 < 10)
                             {
-                                esp += (tab[countc] - tab[countc - 1]) / 20;
+                                esp += (tab[countc] - tab[countc - 1]) / 10;
                             }
                             decimal esp2 = esp / 3;
-                            while (--countc > 0 && ++x2 < 60)
+                            while (--countc > 0 && ++x2 < 30)
                             {
-                                esp2 += (tab[countc] - tab[countc - 1]) / 60;
+                                esp2 += (tab[countc] - tab[countc - 1]) / 30;
                             }
                             Utilities.Write(ConsoleColor.Green, $" {Math.Round(esp / priceResult3.Data.BestBidPrice * 100000, 2)}");
                             Utilities.Write(ConsoleColor.Red, $" {Math.Round(esp2 / priceResult3.Data.BestBidPrice * 100000, 2)}");
-                            decimal volasell = (esp2 - esp) / priceResult3.Data.BestBidPrice * 100000;
+                            decimal volasell = (esp2 - esp) / priceResult3.Data.BestBidPrice * 10000 * (decimal)Math.Pow(count, .3);
                             if (volasell > strategyrisk / 4)
                             {
                                 Utilities.Write(ConsoleColor.Red, $" negative volatility detected at a {Math.Round(volasell, 2)} ratio");
@@ -375,7 +381,14 @@ namespace UsainBot
                                         {
                                             paidPrice = ordersell2.Data.Fills.Average(trade => trade.Price);
                                             orderspanic = client.Spot.Order.CancelAllOpenOrders(symbol: pair);
-                                            ordersell2 = client.Spot.Order.PlaceOrder(pair, OrderSide.Sell, OrderType.Limit, OrderQuantity, price: Math.Round(priceResult3.Data.BestBidPrice * sellPriceRiskRatio, symbolPrecision), timeInForce: TimeInForce.GoodTillCancel); // for if the previous limit order is filled but not 100%
+                                            try
+                                            {
+                                                WebCallResult<BinancePlacedOrder> ordersell4 = client.Spot.Order.PlaceOrder(pair, OrderSide.Sell, OrderType.Limit, OrderQuantity, price: Math.Round(priceResult3.Data.BestBidPrice * sellPriceRiskRatio, symbolPrecision), timeInForce: TimeInForce.GoodTillCancel); // for if the previous limit order is filled but not 100%
+                                            }
+                                            finally
+                                            {
+                                                Utilities.Write(ConsoleColor.Green, "100% sold");
+                                            }
                                             y = 1;
                                         }
                                         else
@@ -386,12 +399,7 @@ namespace UsainBot
                                         }
                                     }
                                     usainsell = 1;
-                                    paidPrice = 0;
-                                    if (ordersell2.Data.Fills != null)
-                                    {
-                                        paidPrice = ordersell2.Data.Fills.Average(trade => trade.Price);
-                                    }
-                                    Utilities.Write(ConsoleColor.Green, "UsainBot PANIC SOLD successfully  " + OrderQuantity + " " + ordersell2.Data.Symbol + $" sold at " + paidPrice);
+                                    Utilities.Write(ConsoleColor.Green, "UsainBot AI SOLD successfully  " + OrderQuantity + " " + ordersell2.Data.Symbol + $" sold at " + paidPrice);
                                     return;
                                 }
                                 else
