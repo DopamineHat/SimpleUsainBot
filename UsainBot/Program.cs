@@ -71,7 +71,6 @@ namespace UsainBot
             }
 
             Utilities.Write(ConsoleColor.Green, "Successfully logged in.");
-            int red = 0;
             while (true)
             {
                 int closet3 = 0;
@@ -97,19 +96,29 @@ namespace UsainBot
                     }
                 }
                 string symbol;
-                if (config.channel_id.Length > 0 && config.discord_token.Length > 0 && red == 0)
+                if (config.discord_token.Length > 0)
                 {
-                    symbol = null;
-                    Utilities.Write(ConsoleColor.Yellow, "Looking for ticker...");
-                    while (null == symbol)
-                    {
-                        symbol = FindTicker(config.discord_token, config.channel_id);
-                        Thread.Sleep(1000);
-                    }
-                    red = 1;
-                    Utilities.Write(ConsoleColor.Green, "Found ticker " + symbol);
+                    Utilities.Write(ConsoleColor.Yellow, "Input symbol or Discord channel ID:");
                     Console.ForegroundColor = ConsoleColor.White;
-                    symbol = symbol.Remove(0, 1);
+                    symbol = Console.ReadLine();
+
+                    // if line is only digits, it's safe to assume it's a Discord channel ID.
+                    if (symbol.All(c => c >= '0' && c <= '9'))
+                    {
+                        string channelId = symbol;
+                        symbol = null;
+                        Console.WriteLine("Looking for symbol...");
+                        // Scrape channel every 100ms
+                        while (null == symbol)
+                        {
+                            symbol = ScrapeChannel(config.discord_token, channelId);
+                            Thread.Sleep(100);
+                        }
+                    }
+
+                    //Exit the program if nothing was entered
+                    if (string.IsNullOrEmpty(symbol))
+                        return;
                 }
                 else
                 {
@@ -153,34 +162,6 @@ namespace UsainBot
                 return null;
             }
             return JsonConvert.DeserializeObject<Config>(File.ReadAllText("config.json"));
-        }
-
-        private static string FindTicker(string discord_token, string channel_id)
-        {
-            Regex regex = new Regex(@"(\$)[a-zA-Z]{1,5}");
-            HttpWebRequest req = (HttpWebRequest)WebRequest.Create("https://discord.com/api/v8/channels/" + channel_id + "/messages?limit=1");
-            req.Headers.Add("Authorization", discord_token);
-            req.Accept = "*/*";
-            req.ContentType = "application/json";
-            req.UserAgent = "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) discord/0.0.309 Chrome/83.0.4103.122 Electron/9.3.5 Safari/537.36";
-            WebResponse res = req.GetResponse();
-            Stream dataStream = res.GetResponseStream();
-            StreamReader reader = new StreamReader(dataStream);
-            string resJson = reader.ReadToEnd();
-            JsonSerializerOptions options = new JsonSerializerOptions
-            { IncludeFields = true };
-            Message[] msg = JsonSerializer.Deserialize<Message[]>(resJson, options);
-            Match match = regex.Match(msg[0].content);
-            reader.Close();
-            dataStream.Close();
-            if (match.Success)
-            {
-                return match.Value;
-            }
-            else
-            {
-                return null;
-            }
         }
 
         private static void ExecuteOrder(string symbol, decimal quantity, decimal strategyrisk, decimal sellStrategy, decimal maxsecondsbeforesell, BinanceClient client, WebCallResult<BinanceExchangeInfo> exchangeInfo)
@@ -474,6 +455,47 @@ namespace UsainBot
                     }
                 }
                 Thread.Sleep(2000);
+            }
+        }
+        private static string ScrapeChannel(string discordToken, string channelId)
+        {
+            // Look for something that starts with a '$' followed by 2 to 5 alphabetic characters.
+            Regex regex = new Regex(@"(\$)[a-zA-Z]{2,5}");
+            try
+            {
+                HttpWebRequest req = (HttpWebRequest)WebRequest.Create("https://discord.com/api/v8/channels/" + channelId + "/messages?limit=1");
+
+                req.Headers.Add("Authorization", discordToken);
+                req.Accept = "*/*";
+                req.ContentType = "application/json";
+
+                HttpWebResponse res = (HttpWebResponse)req.GetResponse();
+                if (res.StatusCode == HttpStatusCode.OK)
+                {
+
+                }
+                Stream dataStream = res.GetResponseStream();
+                StreamReader reader = new StreamReader(dataStream);
+                string resJson = reader.ReadToEnd();
+                Message[] msg = System.Text.Json.JsonSerializer.Deserialize<Message[]>(resJson);
+                Match match = regex.Match(msg[0].content);
+                res.Close();
+                reader.Close();
+                dataStream.Close();
+                if (match.Success)
+                {
+                    // Remove '$' character
+                    return match.Value.Remove(0, 1);
+                }
+                else
+                {
+                    return null;
+                }
+            }
+            catch (WebException ex)
+            {
+                Utilities.Write(ConsoleColor.Red, "ERROR: Could not get Discord message. Error code: " + ex.Status);
+                return null;
             }
         }
     }
