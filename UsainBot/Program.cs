@@ -245,7 +245,7 @@ namespace UsainBot
                             }
                             Utilities.Write(ConsoleColor.Green, $" {Math.Round(espa / priceResult2.Data.BestBidPrice * 100000, 2)}");
                             Utilities.Write(ConsoleColor.Red, $" {Math.Round(esp2a / priceResult2.Data.BestBidPrice * 100000, 2)}");
-                            decimal volasell = (esp2a - espa) / priceResult2.Data.BestBidPrice * 100 * (decimal)Math.Pow(count, .7);
+                            decimal volasell = (esp2a - espa) / priceResult2.Data.BestBidPrice * 50 * (decimal)Math.Pow(count, .7);
                             if (volasell > strategyrisk / 4)
                             {
                                 Utilities.Write(ConsoleColor.Red, $" negative volatility detected at a {Math.Round(volasell, 2)} ratio");
@@ -274,9 +274,9 @@ namespace UsainBot
                                         if (ordersell.Data.Fills != null)
                                         {
                                             paidPrice = ordersell.Data.Fills.Average(trade => trade.Price);
-                                            orderspanic = client.Spot.Order.CancelAllOpenOrders(symbol: pair);
                                             try
                                             {
+                                                orderspanic = client.Spot.Order.CancelAllOpenOrders(symbol: pair);
                                                 WebCallResult<BinancePlacedOrder> ordersell4 = client.Spot.Order.PlaceOrder(pair, OrderSide.Sell, OrderType.Limit, OrderQuantity, price: Math.Round(priceResult2.Data.BestBidPrice * sellPriceRiskRatio, symbolPrecision), timeInForce: TimeInForce.GoodTillCancel); // for if the previous limit order is filled but not 100%
                                             }
                                             finally
@@ -334,7 +334,7 @@ namespace UsainBot
                             }
                             Utilities.Write(ConsoleColor.Green, $" {Math.Round(esp / priceResult3.Data.BestBidPrice * 100000, 2)}");
                             Utilities.Write(ConsoleColor.Red, $" {Math.Round(esp2 / priceResult3.Data.BestBidPrice * 100000, 2)}");
-                            decimal volasell = (esp2 - esp) / priceResult3.Data.BestBidPrice * 100 * (decimal)Math.Pow(count, .7);
+                            decimal volasell = (esp2 - esp) / priceResult3.Data.BestBidPrice * 50 * (decimal)Math.Pow(count, .7);
                             if (volasell > strategyrisk / 4)
                             {
                                 Utilities.Write(ConsoleColor.Red, $" negative volatility detected at a {Math.Round(volasell, 2)} ratio");
@@ -363,9 +363,9 @@ namespace UsainBot
                                         if (ordersell2.Data.Fills != null)
                                         {
                                             paidPrice = ordersell2.Data.Fills.Average(trade => trade.Price);
-                                            orderspanic = client.Spot.Order.CancelAllOpenOrders(symbol: pair);
                                             try
                                             {
+                                                orderspanic = client.Spot.Order.CancelAllOpenOrders(symbol: pair);
                                                 WebCallResult<BinancePlacedOrder> ordersell4 = client.Spot.Order.PlaceOrder(pair, OrderSide.Sell, OrderType.Limit, OrderQuantity, price: Math.Round(priceResult3.Data.BestBidPrice * sellPriceRiskRatio, symbolPrecision), timeInForce: TimeInForce.GoodTillCancel); // for if the previous limit order is filled but not 100%
                                             }
                                             finally
