@@ -58,7 +58,7 @@ namespace UsainBot
             }
             decimal strategyrisk = Math.Round((decimal)Math.Pow((double)config.risktaking,  1.5), 3);
             decimal sellStrategy = Math.Round((decimal).95 - config.risktaking * (decimal).03, 3);
-            decimal maxsecondsbeforesell = config.risktaking * (decimal)5.0;
+            decimal maxsecondsbeforesell = config.risktaking * (decimal)6.0;
             var client = new BinanceClient();
             Utilities.Write(ConsoleColor.Cyan, $"Loading exchange info...");
             WebCallResult<BinanceExchangeInfo> exchangeInfo = client.Spot.System.GetExchangeInfo();
@@ -245,7 +245,7 @@ namespace UsainBot
                             }
                             Utilities.Write(ConsoleColor.Green, $" {Math.Round(espa / priceResult2.Data.BestBidPrice * 100000, 2)}");
                             Utilities.Write(ConsoleColor.Red, $" {Math.Round(esp2a / priceResult2.Data.BestBidPrice * 100000, 2)}");
-                            decimal volasell = (esp2a - espa) / priceResult2.Data.BestBidPrice * 50 * (decimal)Math.Pow(count, .7);
+                            decimal volasell = (esp2a - espa) / priceResult2.Data.BestBidPrice * 64 * (decimal)Math.Pow(count - 10, .7);
                             if (volasell > strategyrisk / 4)
                             {
                                 Utilities.Write(ConsoleColor.Red, $" negative volatility detected at a {Math.Round(volasell, 2)} ratio");
@@ -334,7 +334,7 @@ namespace UsainBot
                             }
                             Utilities.Write(ConsoleColor.Green, $" {Math.Round(esp / priceResult3.Data.BestBidPrice * 100000, 2)}");
                             Utilities.Write(ConsoleColor.Red, $" {Math.Round(esp2 / priceResult3.Data.BestBidPrice * 100000, 2)}");
-                            decimal volasell = (esp2 - esp) / priceResult3.Data.BestBidPrice * 50 * (decimal)Math.Pow(count, .7);
+                            decimal volasell = (esp2 - esp) / priceResult3.Data.BestBidPrice * 64 * (decimal)Math.Pow(count - 10, .7);
                             if (volasell > strategyrisk / 4)
                             {
                                 Utilities.Write(ConsoleColor.Red, $" negative volatility detected at a {Math.Round(volasell, 2)} ratio");
