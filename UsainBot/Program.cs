@@ -46,8 +46,11 @@ namespace UsainBot
                 {
                     ApiCredentials = new ApiCredentials(config.apiKey, config.apiSecret),
                     LogVerbosity = LogVerbosity.None,
-                    LogWriters = new List<TextWriter> { Console.Out }
-                });
+                    LogWriters = new List<TextWriter> { null },
+                    Proxy = null,
+                    ShouldCheckObjects = false,
+                    BaseAddress = "https://api.binance.com"
+                }); ;
             }
             catch (Exception ex)
             {
@@ -160,6 +163,7 @@ namespace UsainBot
             using (client)
             {
                 string pair = symbol.ToUpper() + "BTC";
+                client.ShouldCheckObjects = false;
                 WebCallResult<BinancePlacedOrder> order = client.Spot.Order.PlaceOrder(pair, OrderSide.Buy, OrderType.Market, null, quantity);
                 if (!order.Success)
                 {
