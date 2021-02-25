@@ -80,19 +80,8 @@ namespace UsainBot
                 {
                     while (closet3 == 0)
                     {
-                        Ping pingSender = new Ping();
-
-                        // Create a buffer of 32 bytes of data to be transmitted.
-                        string data = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
-                        byte[] buffer = Encoding.ASCII.GetBytes(data);
-
-                        PingOptions options = new PingOptions(64, true);
-
-                        // Send the request.
-                        PingReply reply = pingSender.Send("139.162.78.33", 1000, buffer, options);
-
-                        if (reply.Status == IPStatus.Success)
-                            Console.Title = "Ping to Tokyo: " + reply.RoundtripTime + "ms";
+                        float reply = client.Spot.System.Ping().Data;
+                        Console.Title = "Ping to Binance: " + reply + "ms";
                     }
                 }
                 string symbol;
