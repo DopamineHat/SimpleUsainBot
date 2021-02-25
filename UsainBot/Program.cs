@@ -146,8 +146,7 @@ namespace UsainBot
                     apiSecret = "",
                     quantity = (decimal)0.00025,
                     risktaking = (decimal)3.0,
-                    discord_token = "",
-                    channel_id = ""
+                    discord_token = ""
                 });
                 File.WriteAllText("config.json", json);
                 Utilities.Write(ConsoleColor.Red, "config.json was missing and has been created. Please edit the file and restart the application.");

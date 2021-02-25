@@ -9,6 +9,5 @@
         public string name;
         public string expiry;
         public string discord_token;
-        public string channel_id;
     }
 }
