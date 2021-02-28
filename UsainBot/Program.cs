@@ -92,9 +92,9 @@ namespace UsainBot
                 Console.Read();
                 return;
             }
-            decimal strategyrisk = Math.Round((decimal)Math.Pow((double)config.risktaking,  1.5), 3);
+            decimal strategyrisk = Math.Round((decimal)Math.Pow((double)config.risktaking - 0.5,  1.5), 3);
             decimal sellStrategy = Math.Round((decimal).95 - config.risktaking * (decimal).03, 3);
-            decimal maxsecondsbeforesell = config.risktaking * (decimal)6.0;
+            decimal maxsecondsbeforesell = config.risktaking * (decimal)10.0;
             var client = new BinanceClient();
             Utilities.Write(ConsoleColor.Cyan, $"Loading exchange info...");
             WebCallResult<BinanceExchangeInfo> exchangeInfo = client.Spot.System.GetExchangeInfo();
