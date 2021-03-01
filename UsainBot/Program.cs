@@ -462,6 +462,7 @@ namespace UsainBot
                     else
                     {
                         imincharge = 1;
+                        priceResult2 = client.Spot.Market.GetBookPrice(pair);
                         WebCallResult<IEnumerable<BinanceCancelledId>> orderspanic2 = client.Spot.Order.CancelAllOpenOrders(symbol: pair);
                         WebCallResult<BinancePlacedOrder> ordersell2 = client.Spot.Order.PlaceOrder(pair, OrderSide.Sell, OrderType.Limit, OrderQuantity, price: Math.Round(priceResult2.Data.BestAskPrice * sellPriceAskRatio - (decimal)0.00000001, symbolPrecision), timeInForce: TimeInForce.GoodTillCancel);
                         while (!ordersell2.Success)
