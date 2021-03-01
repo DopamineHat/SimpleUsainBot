@@ -32,7 +32,7 @@ namespace UsainBot
     {
         public static void Main(string[] args)
         {
-            Console.Title = "UsainBot Alpha";
+            Console.Title = "UsainBot";
             Config config = LoadOrCreateConfig();
             if (config == null)
             {
@@ -227,7 +227,7 @@ namespace UsainBot
                 while ((ticksize = ticksize * 10) < 1)
                     ++symbolPrecision;
                 decimal sellPriceRiskRatio = (decimal).95;
-                decimal sellPriceAskRatio = (decimal).995;
+                decimal sellPriceAskRatio = (decimal).998;
                 decimal StartSellStrategy = sellStrategy;
                 decimal MaxSellStrategy = 1 - ((1 - sellStrategy) / 5);
                 decimal volasellmax = (decimal).01;
@@ -463,19 +463,38 @@ namespace UsainBot
                     {
                         imincharge = 1;
                         WebCallResult<IEnumerable<BinanceCancelledId>> orderspanic2 = client.Spot.Order.CancelAllOpenOrders(symbol: pair);
-                        WebCallResult<BinancePlacedOrder> ordersell2 = client.Spot.Order.PlaceOrder(pair, OrderSide.Sell, OrderType.Limit, OrderQuantity, price: Math.Round(priceResult3.Data.BestBidPrice * sellPriceRiskRatio, symbolPrecision), timeInForce: TimeInForce.GoodTillCancel);
+                        WebCallResult<BinancePlacedOrder> ordersell2 = client.Spot.Order.PlaceOrder(pair, OrderSide.Sell, OrderType.Limit, OrderQuantity, price: Math.Round(priceResult2.Data.BestAskPrice * sellPriceAskRatio - (decimal)0.00000001, symbolPrecision), timeInForce: TimeInForce.GoodTillCancel);
                         while (!ordersell2.Success)
                         {
-                            Utilities.Write(ConsoleColor.Red, $"ERROR! Could not place the Order sell, trying another time. Error code: " + ordersell2.Error?.Message);
-                            ordersell2 = client.Spot.Order.PlaceOrder(pair, OrderSide.Sell, OrderType.Limit, OrderQuantity, price: Math.Round(priceResult3.Data.BestBidPrice * sellPriceRiskRatio, symbolPrecision), timeInForce: TimeInForce.GoodTillCancel);
+                            Utilities.Write(ConsoleColor.Red, $"ERROR! Could not place the Market order sell, trying another time. Error code: " + ordersell2.Error?.Message);
+                            ordersell2 = client.Spot.Order.PlaceOrder(pair, OrderSide.Sell, OrderType.Limit, OrderQuantity, price: Math.Round(priceResult2.Data.BestAskPrice * sellPriceAskRatio - (decimal)0.00000001, symbolPrecision), timeInForce: TimeInForce.GoodTillCancel);
                         }
-                        usainsell = 1;
-                        paidPrice = 0;
-                        if (ordersell2.Data.Fills != null)
+                        Thread.Sleep(1000);
+                        int y = 0;
+                        while (y == 0)
                         {
-                            paidPrice = ordersell2.Data.Fills.Average(trade => trade.Price);
+                            if (ordersell2.Data.Fills != null)
+                            {
+                                paidPrice = ordersell2.Data.Fills.Average(trade => trade.Price);
+                                try
+                                {
+                                    orderspanic2 = client.Spot.Order.CancelAllOpenOrders(symbol: pair);
+                                    WebCallResult<BinancePlacedOrder> ordersell4 = client.Spot.Order.PlaceOrder(pair, OrderSide.Sell, OrderType.Limit, OrderQuantity, price: Math.Round(priceResult2.Data.BestBidPrice * sellPriceRiskRatio, symbolPrecision), timeInForce: TimeInForce.GoodTillCancel); // for if the previous limit order is filled but not 100%
+                                }
+                                finally
+                                {
+                                    Utilities.Write(ConsoleColor.Green, "100% sold");
+                                }
+                            }
+                            else
+                            {
+                                priceResult2 = client.Spot.Market.GetBookPrice(pair);
+                                orderspanic2 = client.Spot.Order.CancelAllOpenOrders(symbol: pair);
+                                ordersell2 = client.Spot.Order.PlaceOrder(pair, OrderSide.Sell, OrderType.Limit, OrderQuantity, price: Math.Round(priceResult2.Data.BestAskPrice * sellPriceAskRatio - (decimal)0.00000001, symbolPrecision), timeInForce: TimeInForce.GoodTillCancel);
+                            }
+                            y = 1;
                         }
-                        Utilities.Write(ConsoleColor.Green, "UsainBot TIME SOLD successfully  " + OrderQuantity + " " + ordersell2.Data.Symbol + $" sold at " + paidPrice);
+                        Utilities.Write(ConsoleColor.Green, "UsainBot TIME SOLD successfully  " + OrderQuantity + " " + ordersell2.Data.Symbol + $" at " + paidPrice);
                         return;
                     }
                 }
