@@ -25,54 +25,122 @@ using Newtonsoft.Json;
 using JsonSerializer = System.Text.Json.JsonSerializer;
 using System.Net.NetworkInformation;
 using System.Text;
+using System.Runtime.InteropServices;
 
 namespace UsainBot
 {
     internal static class Program
     {
+        [DllImport("kernel32.dll", ExactSpelling = true)]
+        private static extern IntPtr GetConsoleWindow();
+        private static IntPtr ThisConsole = GetConsoleWindow();
+        [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
+        private static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+        private const int MAXIMIZE = 3;
+        private const int RESTORE = 9;
         public static void Main(string[] args)
         {
-            Console.Title = "UsainBot";
+            Console.SetWindowSize(Console.LargestWindowWidth, Console.LargestWindowHeight);
+            ShowWindow(ThisConsole, MAXIMIZE);
+            Console.Title = "UsainBot: loading...";
             Config config = LoadOrCreateConfig();
             if (config == null)
             {
                 Console.Read();
                 return;
             }
-               using (HttpClient clientapi = new HttpClient())
-               {
-                   clientapi.BaseAddress = new Uri("https://usainbot.com/api/");
-                   Task<HttpResponseMessage> response = clientapi.GetAsync("?key=" + config.apiKey);
-                   HttpResponseMessage result = response.Result;
-                   response.Wait();
-                   if (result.IsSuccessStatusCode)
-                   {
-                       Task<string> task = result.Content.ReadAsStringAsync();
-                       string[] res = task.Result.Split(':');
-                       config.name = res[0];
-                       config.expiry = res[1];
-                   }
-                   else if (result.StatusCode == HttpStatusCode.Unauthorized)
-                   {
-                       Console.WriteLine("No license for this API key.");
-                       Thread.Sleep(3000);
-                       return;
-                   }
-                   else if (result.StatusCode == HttpStatusCode.Forbidden)
-                   {
-                       Console.WriteLine("Your license has expired.");
-                       Thread.Sleep(3000);
-                       return;
-                   }
-                   else
-                   {
-                       Console.WriteLine("Unknown error while querying API.");
-                       Thread.Sleep(3000);
-                       return;
-                   }
-               }
-               Console.WriteLine("Hello " + config.name + ", your license will expire on " + config.expiry);
-
+            using (HttpClient clientapi = new HttpClient())
+            {
+                clientapi.BaseAddress = new Uri("https://usainbot.com/api/");
+                Task<HttpResponseMessage> response = clientapi.GetAsync("?key=" + config.apiKey);
+                HttpResponseMessage result = response.Result;
+                response.Wait();
+                if (result.IsSuccessStatusCode)
+                {
+                    Task<string> task = result.Content.ReadAsStringAsync();
+                    string[] res = task.Result.Split(':');
+                    config.name = res[0];
+                    config.expiry = res[1];
+                }
+                else if (result.StatusCode == HttpStatusCode.Unauthorized)
+                {
+                    Console.WriteLine("No license for this API key.");
+                    Thread.Sleep(3000);
+                    return;
+                }
+                else if (result.StatusCode == HttpStatusCode.Forbidden)
+                {
+                    Console.WriteLine("Your license has expired.");
+                    Thread.Sleep(3000);
+                    return;
+                }
+                else
+                {
+                    Console.WriteLine("Unknown error while querying API.");
+                    Thread.Sleep(3000);
+                    return;
+                }
+            }
+            Console.ForegroundColor = ConsoleColor.DarkGreen;
+            Console.WriteLine("Hello " + config.name + ", your license will expire on " + config.expiry);
+            Console.ForegroundColor = ConsoleColor.DarkGray;
+            Console.WriteLine($"                                                                                                                                                                                          .,.");
+            Console.WriteLine($"                                                                                                                                                                                    .* *****.");
+            Console.WriteLine($"                                                                                                                                                                                *, .* ****/*");
+            Console.WriteLine($"                                                                                                                                                                             , * ,///***/,");
+            Console.WriteLine($"                                                                                                                                                                        .*/* *//////*/  ");
+            Console.WriteLine($"                                                                                                                                                                    , */,, */////////*. *((,   ");
+            Console.WriteLine($"                                                                                                                                                                .* **////////**//*/. **/  .,    ");
+            Console.WriteLine($"                                                                                                                                                           ,./       ,/////**/**,.*/,,//(#/((*/.  ");
+            Console.WriteLine($"                                                                                                                                                          ..*           ////////.*//////***/(%%%%//  /");
+            Console.WriteLine($"                                                                                                                                                 .*.              /////,///////*///////(####*///, /");
+            Console.WriteLine($"                                                                                                                                            .*              ,/. ./,////*//**//*//**////(###(*///  * ");
+            Console.WriteLine($"                ,,,,.*, *   .                                                                                                          .*            .//*  ,/,///////////*/**/****////////***///,/. ");
+            Console.WriteLine($"             ,//////////,,.,,,/////*,,                                                                                            .,           ,//.  ./*,///////////////////******/(%//////////     ");
+            Console.WriteLine($"           , *////*,,. .           */**/**.                                                                                   ..          ./,   .//./////////////*********/*****,,,****,,,,,*/*  ");
+            Console.WriteLine($"          ,///****,.,**,...    .,      ,*/*                                                                             .        .*,      ,/,,////////////////////////*//////**///%%%%****,,**   ");
+            Console.WriteLine($"         ,//***************,,.       ..* ,//,,                                                                  .  .     ./,        **/,,/////**////////////////////,////   ");
+            Console.WriteLine($"         , , **///******,,,,,,           ,**//**.                                                           .        */      ***/**.,*///****/**//////////////////  ,    ");
+            Console.WriteLine($"        . ///////********,///*****,.      *///, */.                                                             ./  .//////*,///////**************////////////*    .        ");
+            Console.WriteLine($"        . ////*****/*/////////////**,,.    ./.,,,  ,                                             .            / ./////*///////////************/*////////////  *   .*        ");
+            Console.WriteLine($"        . ////*****/////////*,,**,,,,.,     *..*/*/*.                .//*.          ,*.        .            /*///*//////////////*/***/******//////////////. *  ,        ");
+            Console.WriteLine($"        /  //////////***//////***,,,,,....  ,.  ,  ,.,           /,        .*.             ** ,/*          .//////////////////**/*******/*///////////////..               ");
+            Console.WriteLine($"        ,, ,/////////***,,,*,****,,,,,,,,,....  *//*           ,   ***,,****   ***//       *.*////.,,,,,,,,*//*////////////**//********/////////////// /             ");
+            Console.WriteLine($"         .* *//**////**,,.****.***,,,,,**,,,..  //  ,     *//****//**////*/*********///**/*, .,,,,,,**********////*///////*////*/*/*///////////////.,.                   ");
+            Console.WriteLine($"          ., *///****/*****/****,,,,,,..,,,,,..,   .      *  .*/////////////////*////,. ,,*,,*******************///////*////////////////////////,.*               ");
+            Console.WriteLine($"            . * *******////*****/***,, .....,,*,,,.      /,,,,,,,,,,,,,,*////////,,*,*,,,********************/////////////////////////////////, ,              ");
+            Console.WriteLine($"              , ., ***/////*******///**,..,,,*,,****/**.////////***********,,///,,,**************************///////////////////////////.    .              ");
+            Console.WriteLine($"               *, ***//*//*///**/**,******,,******//**//////////////**///**,**//****/****/**/**///////*****////////////////////*,.*/*   ,                   ");
+            Console.WriteLine($"                 /******/////*,,,,*//**/**,*/*/////**//////////*/////*,*///*/////////////////////////****/////////////////////*     *             ");
+            Console.WriteLine($"                   /, *////***///////*******///////*//*///////**//*****///////////////////////**//////////////*   ./*.,        ,*                  ");
+            Console.WriteLine($"                    .*/, *///////////////////////////,,/////*//*****///////////////////////////////////////////.            ,                        ");
+            Console.WriteLine($"                         / *////////////////////////*,,,/*/////**////////////////////////////////,   /*//   ,       .   ,.                       ");
+            Console.WriteLine($"                           .* **//////////////////*/*,*.,./*//***/**////////////////////////////****,,*,/  .* /                                  ");
+            Console.WriteLine($"                                ,.,/////////*//////**.,///*,/******/////////////////////////////***/,,/*/    **  ,                           ");
+            Console.WriteLine($"                                     .  , **///////**///...,*,/*****//////////////////////////////,,*////  ./   *                            ");
+            Console.WriteLine($"                                     .  ,  ///////*/..,,,,,,*,****//**///////////////////////*,,*////////..   ,/ ,                   ");
+            Console.WriteLine($"                                .           ./////*.*,,,,**,..*,,*/////////////////////*****/////////////, .*//   /                  ");
+            Console.WriteLine($"                                              , /*////,,,,,,...../*****//////*****,**////////////////,////, .  .//  .                     ");
+            Console.WriteLine($"                                             ...//*/**,.........*//////////////,/,///////////////,//,*/////* ///*     /                 ");
+            Console.WriteLine($"                                      ./*      .,///*...//,,,/.,/**//////*,,*...,.,./////////,/,/////////**** ,    *.  *                        ");
+            Console.WriteLine($"                                  .//***,.    ,/////...,,,,,*/,,,***,,*,,,,.....,.,,,*///,,/////////////////// ./*   ,/.                              ");
+            Console.WriteLine($"                              , ***/**/*     /,////,..,,,*,/,,,,,,*/*,/.,,,,////(//*,,,,.*///////////***/////// .//(/.  .,                       ");
+            Console.WriteLine($"                           /, ******////*,.   /////*...,,,*,,,,.,*..****.,//*,...,.*,////*,*,//////////////////*/, ,.  ./,                    ");
+            Console.WriteLine($"                      .*//, ********//*///*,  *////...,,,,,,,,....,**,,..,**,.,,,,,,******%%%%(/####///////#%%%%//.%%%*     ,                     ");
+            Console.WriteLine($"                      , **/******/*********//////////,,,,,*..,***,.,*,,,,.,,,..,//////(/////*,***###///////(##%%// *.. ,#%%#  (                              ");
+            Console.WriteLine($"                    /********/******//////////////////*,.....*(#/*,,......,*,,,,,,,,*,...........,///////**//(///// /*..    .%%.#                       ");
+            Console.WriteLine($"                    *//(/*////*//*****////////*,///////*///..****./*,............,////,.,/////////////////////////**. ,//(////.  /*                    ");
+            Console.WriteLine($"                    . * ***((((*****///////////**////////,,../(**(,........,//////////**,...............*,//////////////. /////. /// *                  ");
+            Console.WriteLine($"                      **/*/(((/**//////////////////////%(/#(,,.....,***,............,,,,,,,,,****///////////////////////..    .,..*  //.                 ");
+            Console.WriteLine($"                     ****///(//####///(/////(///##((#*,/.(,//,....,,,,,,,,,,*/,*/////////////*/*,,,,,,,,,,,/,//////////// ///*  .  .  ./.                  ");
+            Console.WriteLine($"                         *****///////////////***//**    *////  ,,,,*/,**/////////////*,,,,,,,,,,,,,,,,,,,,,,,,**///////****/ .    ,*     ,*                          ");
+            Console.WriteLine($"                      ****///////////////*.*.            /*////*/////,.........,,,,,,,,,,,,,,,....,*//////////,///*/*****/ *,,,,    *//,                           ");
+            Console.WriteLine($"                        , ****////////////.,/      .,        /    .................,......,//////////////**,,,,,,,,/,/////////* ,......    ,/                            ");
+            Console.WriteLine($"                           * .* ***/////*,,*..,,,               *       ,,*//////*,,/////*,..................,*///////////////////. ,////////////*                    ");
+            Console.WriteLine($"                               .////,                          ..   //   ,.......................**,/////////////*********/*///////,  .          ,/*             ");
+            Console.WriteLine($"                                                                //,      ................,,*/////*,,..................,///////////////  ////////,     ,         ");
+            Console.WriteLine($"                                                                  /        , *//////*,,,....,,..................,*//////,........,,.///// .,             * ");
+            Console.ForegroundColor = ConsoleColor.White;
             try
             {
                 BinanceClient.SetDefaultOptions(new BinanceClientOptions
@@ -92,7 +160,7 @@ namespace UsainBot
                 Console.Read();
                 return;
             }
-            decimal strategyrisk = Math.Round((decimal)Math.Pow((double)config.risktaking - 0.5,  1.5), 3);
+            decimal strategyrisk = Math.Round((decimal)Math.Pow((double)config.risktaking - 0.5, 1.5), 3);
             decimal sellStrategy = Math.Round((decimal).95 - config.risktaking * (decimal).03, 3);
             decimal maxsecondsbeforesell = config.risktaking * (decimal)10.0;
             var client = new BinanceClient();
@@ -120,6 +188,8 @@ namespace UsainBot
                         Console.Title = "Ping to Binance: " + reply + "ms";
                     }
                 }
+                ShowWindow(ThisConsole, RESTORE);
+                Console.SetWindowSize(80, 40);
                 string symbol;
                 if (config.discord_token.Length > 0)
                 {
