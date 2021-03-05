@@ -304,8 +304,8 @@ namespace UsainBot
                 decimal currentstoploss = 0;
                 List<decimal> tab = new List<decimal>();
                 int count = -1;
-                int x = 0;
-                int n = 1;
+                int stoplossex = 0;
+                int first = 1;
                 int usainsell = 0;
                 int imincharge = 0;
                 Thread t = new Thread(NewThread);
@@ -316,7 +316,7 @@ namespace UsainBot
                 WebCallResult<BinanceBookPrice> priceResult2 = client.Spot.Market.GetBookPrice(pair);
                 void NewThread()
                 {
-                    while ((timestamp + maxsecondsbeforesell * 10000000) > DateTime.Now.ToFileTime() && x != 2 && imincharge == 0)
+                    while ((timestamp + maxsecondsbeforesell * 10000000) > DateTime.Now.ToFileTime() && stoplossex == 0 && imincharge == 0)
                     {
                         count++;
                         priceResult2 = client.Spot.Market.GetBookPrice(pair);
@@ -359,7 +359,7 @@ namespace UsainBot
                                     WebCallResult<BinancePlacedOrder> ordersell = client.Spot.Order.PlaceOrder(pair, OrderSide.Sell, OrderType.Limit, OrderQuantity, price: Math.Round(priceResult2.Data.BestAskPrice * sellPriceAskRatio - (decimal)0.00000001, symbolPrecision), timeInForce: TimeInForce.GoodTillCancel);
                                     while (!ordersell.Success)
                                     {
-                                        Utilities.Write(ConsoleColor.Red, $"ERROR! Could not place the Market order sell, trying another time. Error code: " + ordersell.Error?.Message);
+                                        Utilities.Write(ConsoleColor.Red, $"ERROR! Could not place the Limit order sell, trying another time. Error code: " + ordersell.Error?.Message);
                                         ordersell = client.Spot.Order.PlaceOrder(pair, OrderSide.Sell, OrderType.Limit, OrderQuantity, price: Math.Round(priceResult2.Data.BestAskPrice * sellPriceAskRatio - (decimal)0.00000001, symbolPrecision), timeInForce: TimeInForce.GoodTillCancel);
                                     }
                                     Thread.Sleep(1000);
@@ -400,7 +400,7 @@ namespace UsainBot
                 }
                 void NewThread2()
                 {
-                    while ((timestamp + maxsecondsbeforesell * 10000000) > DateTime.Now.ToFileTime() && x != 2 && imincharge == 0)
+                    while ((timestamp + maxsecondsbeforesell * 10000000) > DateTime.Now.ToFileTime() && stoplossex == 0 && imincharge == 0)
                     {
                         count++;
                         try
@@ -448,7 +448,7 @@ namespace UsainBot
                                     WebCallResult<BinancePlacedOrder> ordersell2 = client.Spot.Order.PlaceOrder(pair, OrderSide.Sell, OrderType.Limit, OrderQuantity, price: Math.Round(priceResult3.Data.BestAskPrice * sellPriceAskRatio - (decimal)0.00000001, symbolPrecision), timeInForce: TimeInForce.GoodTillCancel);
                                     while (!ordersell2.Success)
                                     {
-                                        Utilities.Write(ConsoleColor.Red, $"ERROR! Could not place the Market order sell, trying another time. Error code: " + ordersell2.Error?.Message);
+                                        Utilities.Write(ConsoleColor.Red, $"ERROR! Could not place the Limit order sell, trying another time. Error code: " + ordersell2.Error?.Message);
                                         ordersell2 = client.Spot.Order.PlaceOrder(pair, OrderSide.Sell, OrderType.Limit, OrderQuantity, price: Math.Round(priceResult3.Data.BestAskPrice * sellPriceAskRatio - (decimal)0.00000001, symbolPrecision), timeInForce: TimeInForce.GoodTillCancel);
                                     }
                                     Thread.Sleep(1000);
@@ -497,25 +497,19 @@ namespace UsainBot
                         {
                             currentstoploss = stopPrice;
                             decimal sellPrice = Math.Round(stopPrice * sellPriceRiskRatio, symbolPrecision);
-                            WebCallResult<IEnumerable<BinanceCancelledId>> orders = client.Spot.Order.CancelAllOpenOrders(symbol: pair);
-                            if (!orders.Success)
+                            WebCallResult<IEnumerable<BinanceCancelledId>> closeorders = client.Spot.Order.CancelAllOpenOrders(symbol: pair);
+                            if (!closeorders.Success)
                             {
-                                if (n == 0)
-                                    if (x == 0)
-                                    {
-                                        x = 1;
-                                        Utilities.Write(ConsoleColor.Red, $"ERROR! Could not remove orders. Error code: " + orders.Error?.Message);
-                                    }
-                                    else
-                                    {
-                                        x = 2;
-                                        Utilities.Write(ConsoleColor.Red, "StopLoss executed : " + orders.Error?.Message);
-                                        return;
-                                    }
+                                if (first == 0)
+                                {
+                                    stoplossex = 1;
+                                    Utilities.Write(ConsoleColor.Red, "StopLoss executed");
+                                    return;
+                                }
                             }
                             else
                                 Utilities.Write(ConsoleColor.Blue, $"Orders successfully removed.");
-                            n = 0;
+                            first = 0;
                             if (usainsell == 0)
                             {
                                 WebCallResult<BinancePlacedOrder> panicsell = client.Spot.Order.PlaceOrder(pair, OrderSide.Sell, OrderType.StopLossLimit, OrderQuantity, price: sellPrice, timeInForce: TimeInForce.GoodTillCancel, stopPrice: stopPrice);
@@ -529,7 +523,7 @@ namespace UsainBot
                             }
                         }
                     }
-                    else
+                    else if (stoplossex == 0)
                     {
                         imincharge = 1;
                         priceResult2 = client.Spot.Market.GetBookPrice(pair);
@@ -537,7 +531,7 @@ namespace UsainBot
                         WebCallResult<BinancePlacedOrder> ordersell2 = client.Spot.Order.PlaceOrder(pair, OrderSide.Sell, OrderType.Limit, OrderQuantity, price: Math.Round(priceResult2.Data.BestAskPrice * sellPriceAskRatio - (decimal)0.00000001, symbolPrecision), timeInForce: TimeInForce.GoodTillCancel);
                         while (!ordersell2.Success)
                         {
-                            Utilities.Write(ConsoleColor.Red, $"ERROR! Could not place the Market order sell, trying another time. Error code: " + ordersell2.Error?.Message);
+                            Utilities.Write(ConsoleColor.Red, $"ERROR! Could not place the Limit order sell, trying another time. Error code: " + ordersell2.Error?.Message);
                             ordersell2 = client.Spot.Order.PlaceOrder(pair, OrderSide.Sell, OrderType.Limit, OrderQuantity, price: Math.Round(priceResult2.Data.BestAskPrice * sellPriceAskRatio - (decimal)0.00000001, symbolPrecision), timeInForce: TimeInForce.GoodTillCancel);
                         }
                         Thread.Sleep(1000);
