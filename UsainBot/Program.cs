@@ -162,7 +162,7 @@ namespace UsainBot
             }
             decimal strategyrisk = Math.Round((decimal)Math.Pow((double)config.risktaking - 0.5, 1.5), 3);
             decimal sellStrategy = Math.Round((decimal).95 - config.risktaking * (decimal).03, 3);
-            decimal maxsecondsbeforesell = config.risktaking * (decimal)10.0;
+            decimal maxsecondsbeforesell = config.risktaking * (decimal)6.0;
             var client = new BinanceClient();
             Utilities.Write(ConsoleColor.Cyan, $"Loading exchange info...");
             WebCallResult<BinanceExchangeInfo> exchangeInfo = client.Spot.System.GetExchangeInfo();
@@ -366,18 +366,22 @@ namespace UsainBot
                                     int y = 0;
                                     while (y == 0)
                                     {
+                                        paidPrice = ordersell.Data.Fills.Average(trade => trade.Price);
                                         if (ordersell.Data.Fills != null)
                                         {
-                                            paidPrice = ordersell.Data.Fills.Average(trade => trade.Price);
-                                            try
+                                            if (ordersell.Data.QuantityFilled < OrderQuantity)
                                             {
-                                                orderspanic = client.Spot.Order.CancelAllOpenOrders(symbol: pair);
-                                                WebCallResult<BinancePlacedOrder> ordersell4 = client.Spot.Order.PlaceOrder(pair, OrderSide.Sell, OrderType.Limit, OrderQuantity, price: Math.Round(priceResult2.Data.BestBidPrice * sellPriceRiskRatio, symbolPrecision), timeInForce: TimeInForce.GoodTillCancel); // for if the previous limit order is filled but not 100%
+                                                try
+                                                {
+                                                    orderspanic = client.Spot.Order.CancelAllOpenOrders(symbol: pair);
+                                                    WebCallResult<BinancePlacedOrder> ordersell4 = client.Spot.Order.PlaceOrder(pair, OrderSide.Sell, OrderType.Limit, OrderQuantity, price: Math.Round(priceResult2.Data.BestBidPrice * sellPriceRiskRatio, symbolPrecision), timeInForce: TimeInForce.GoodTillCancel); // for if the previous limit order is filled but not 100%
+                                                }
+                                                finally
+                                                {
+                                                    Utilities.Write(ConsoleColor.Green, "100% sold");
+                                                }
                                             }
-                                            finally
-                                            {
-                                                Utilities.Write(ConsoleColor.Green, "100% sold");
-                                            }
+                                            y = 1;
                                         }
                                         else
                                         {
@@ -385,7 +389,6 @@ namespace UsainBot
                                             orderspanic = client.Spot.Order.CancelAllOpenOrders(symbol: pair);
                                             ordersell = client.Spot.Order.PlaceOrder(pair, OrderSide.Sell, OrderType.Limit, OrderQuantity, price: Math.Round(priceResult2.Data.BestAskPrice * sellPriceAskRatio - (decimal)0.00000001, symbolPrecision), timeInForce: TimeInForce.GoodTillCancel);
                                         }
-                                        y = 1;
                                     }
                                     usainsell = 1;
                                     Utilities.Write(ConsoleColor.Green, "UsainBot AI SOLD successfully  " + OrderQuantity + " " + ordersell.Data.Symbol + $" at " + paidPrice);
@@ -455,17 +458,20 @@ namespace UsainBot
                                     int y = 0;
                                     while (y == 0)
                                     {
+                                        paidPrice = ordersell2.Data.Fills.Average(trade => trade.Price);
                                         if (ordersell2.Data.Fills != null)
                                         {
-                                            paidPrice = ordersell2.Data.Fills.Average(trade => trade.Price);
-                                            try
+                                            if (ordersell2.Data.QuantityFilled < OrderQuantity)
                                             {
-                                                orderspanic = client.Spot.Order.CancelAllOpenOrders(symbol: pair);
-                                                WebCallResult<BinancePlacedOrder> ordersell4 = client.Spot.Order.PlaceOrder(pair, OrderSide.Sell, OrderType.Limit, OrderQuantity, price: Math.Round(priceResult3.Data.BestBidPrice * sellPriceRiskRatio, symbolPrecision), timeInForce: TimeInForce.GoodTillCancel); // for if the previous limit order is filled but not 100%
-                                            }
-                                            finally
-                                            {
-                                                Utilities.Write(ConsoleColor.Green, "100% sold");
+                                                try
+                                                {
+                                                    orderspanic = client.Spot.Order.CancelAllOpenOrders(symbol: pair);
+                                                    WebCallResult<BinancePlacedOrder> ordersell4 = client.Spot.Order.PlaceOrder(pair, OrderSide.Sell, OrderType.Limit, OrderQuantity, price: Math.Round(priceResult3.Data.BestBidPrice * sellPriceRiskRatio, symbolPrecision), timeInForce: TimeInForce.GoodTillCancel); // for if the previous limit order is filled but not 100%
+                                                }
+                                                finally
+                                                {
+                                                    Utilities.Write(ConsoleColor.Green, "100% sold");
+                                                }
                                             }
                                             y = 1;
                                         }
@@ -538,18 +544,22 @@ namespace UsainBot
                         int y = 0;
                         while (y == 0)
                         {
+                            paidPrice = ordersell2.Data.Fills.Average(trade => trade.Price);
                             if (ordersell2.Data.Fills != null)
                             {
-                                paidPrice = ordersell2.Data.Fills.Average(trade => trade.Price);
-                                try
+                                if(ordersell2.Data.QuantityFilled < OrderQuantity) 
                                 {
-                                    orderspanic2 = client.Spot.Order.CancelAllOpenOrders(symbol: pair);
-                                    WebCallResult<BinancePlacedOrder> ordersell4 = client.Spot.Order.PlaceOrder(pair, OrderSide.Sell, OrderType.Limit, OrderQuantity, price: Math.Round(priceResult2.Data.BestBidPrice * sellPriceRiskRatio, symbolPrecision), timeInForce: TimeInForce.GoodTillCancel); // for if the previous limit order is filled but not 100%
+                                    try
+                                    {
+                                        orderspanic2 = client.Spot.Order.CancelAllOpenOrders(symbol: pair);
+                                        WebCallResult<BinancePlacedOrder> ordersell4 = client.Spot.Order.PlaceOrder(pair, OrderSide.Sell, OrderType.Limit, OrderQuantity, price: Math.Round(priceResult2.Data.BestBidPrice * sellPriceRiskRatio, symbolPrecision), timeInForce: TimeInForce.GoodTillCancel); // for if the previous limit order is filled but not 100%
+                                    }
+                                    finally
+                                    {
+                                        Utilities.Write(ConsoleColor.Green, "100% sold");
+                                    }
                                 }
-                                finally
-                                {
-                                    Utilities.Write(ConsoleColor.Green, "100% sold");
-                                }
+                                y = 1;
                             }
                             else
                             {
@@ -557,7 +567,6 @@ namespace UsainBot
                                 orderspanic2 = client.Spot.Order.CancelAllOpenOrders(symbol: pair);
                                 ordersell2 = client.Spot.Order.PlaceOrder(pair, OrderSide.Sell, OrderType.Limit, OrderQuantity, price: Math.Round(priceResult2.Data.BestAskPrice * sellPriceAskRatio - (decimal)0.00000001, symbolPrecision), timeInForce: TimeInForce.GoodTillCancel);
                             }
-                            y = 1;
                         }
                         Utilities.Write(ConsoleColor.Green, "UsainBot TIME SOLD successfully  " + OrderQuantity + " " + ordersell2.Data.Symbol + $" at " + paidPrice);
                         return;
