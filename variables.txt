@@ -1,0 +1,18 @@
+sellPriceRiskRatio: entre 0.5 et 1: le ratio multiplicateur du prix de la limite par rapport au best bid quand on veut vendre le plus rapidement possible, exemple: 0.95: on vend a 95% du best bid pour faire comme un ordre de market.
+sellPriceAskRatio: entre 0.5 et 1: le ratio multiplicateur du prix de la limite par rapport au best ask quand on veut vendre un peu en dessous du best ask. exemple: 0.998: on vend 0.2% en dessous du best ask (- 1 satoshi)
+count: compteur pour tab (utilisé par les deux threads)
+tab: tableau avec tous les bestbid (utilisé par les deux threads)
+x2a et countca: variables qui permettent de lire le tableau tab par la fin. (1 par thread avec autre nom, x2)
+espa: esperence sur les 10 derniers count (1 par thread avec autre nom, x2)
+esp2a: esperence sur les 30 derniers count (1 par thread avec autre nom, x2)
+volasell: ratio volatilité descendante (écart negatif entre les deux esperence), est influencée par: prix (best bid), temps (count), esp2a, espa.
+volasellmax: maximum jusqu' a présent du ratio volatilité descendante volasell (écart negatif entre les deux esperence).
+strategyrisk: derivé de risktaking, détermine le threshold de volasell a partir duquel on vend.
+sellStrategy: variable entre 0.5 et 1, initiée en temps que derivé de risktaking, ratio qui gere l ecart entre les stoploss et le prix actuel, dépendante de volasell, strategyrisk, MaxsellStrategy et StartSellStrategy, ne diminue jamais.
+StartSellStrategy: copie de sellStrategy au debut du programme.
+MaxSellStrategy: derivé de sellStrategy, ratio maximum que peut atteindre la stoploss par rapport au best bid.
+imincharge: booleen qui determine si un thread est en train de vendre.
+usainsell: booleen qui determine si un thread vend avec l' algorithme de vente et non par stop-loss ou temps.
+stoplossex: booleen qui determine si la stoploss a été éxecutée.
+
+
