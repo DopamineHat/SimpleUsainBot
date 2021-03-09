@@ -578,7 +578,7 @@ namespace UsainBot
         private static string ScrapeChannel(string discordToken, string channelId)
         {
             // Look for something that starts with a '$' followed by 2 to 5 alphabetic characters.
-            Regex regex = new Regex(@"(\#)[a-zA-Z]{2,5}");
+            Regex regex = new Regex(@"(\$)[a-zA-Z]{2,5}");
             try
             {
                 HttpWebRequest req = (HttpWebRequest)WebRequest.Create("https://discord.com/api/v8/channels/" + channelId + "/messages?limit=1");
