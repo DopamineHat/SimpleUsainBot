@@ -160,9 +160,6 @@ namespace UsainBot
                 Console.Read();
                 return;
             }
-            decimal strategyrisk = Math.Round((decimal)Math.Pow((double)config.risktaking - 0.5, 1.5), 3);
-            decimal sellStrategy = Math.Round((decimal).95 - config.risktaking * (decimal).03, 3);
-            decimal maxsecondsbeforesell = config.risktaking * (decimal)6.0;
             var client = new BinanceClient();
             Utilities.Write(ConsoleColor.Cyan, $"Loading exchange info...");
             WebCallResult<BinanceExchangeInfo> exchangeInfo = client.Spot.System.GetExchangeInfo();
@@ -178,6 +175,11 @@ namespace UsainBot
             while (true)
             {
                 int closet3 = 0;
+                string symbol;
+                string symbolpair;
+                string qtusd;
+                string srisk;
+                decimal quantity;
                 Thread t3 = new Thread(PingThread);
                 t3.Start();
                 void PingThread()
@@ -190,7 +192,42 @@ namespace UsainBot
                 }
                 ShowWindow(ThisConsole, RESTORE);
                 Console.SetWindowSize(80, 40);
-                string symbol;
+                Utilities.Write(ConsoleColor.Yellow, "How much USD to allocate?");
+                Console.ForegroundColor = ConsoleColor.White;
+                qtusd = Console.ReadLine();
+                if (string.IsNullOrEmpty(qtusd))
+                    return;
+                decimal usd = Convert.ToDecimal(qtusd);
+                if (usd < 10)
+                {
+                    Utilities.Write(ConsoleColor.Red, $"Has to be higher than 10");
+                    return;
+                }
+                Utilities.Write(ConsoleColor.Yellow, "On a scale of 1 to 5, how much risk should i take?");
+                Console.ForegroundColor = ConsoleColor.White;
+                srisk = Console.ReadLine();
+                if (string.IsNullOrEmpty(srisk))
+                    return;
+                decimal risktaking = Convert.ToDecimal(srisk);
+                decimal strategyrisk = Math.Round((decimal)Math.Pow((double)risktaking - 0.5, 1.5), 3);
+                decimal sellStrategy = Math.Round((decimal).95 - risktaking * (decimal).03, 3);
+                decimal maxsecondsbeforesell = risktaking * (decimal)6.0;
+                Utilities.Write(ConsoleColor.Green, $"Usain Bot risk taking set to  " + risktaking);
+                Utilities.Write(ConsoleColor.Yellow, "Input pair:");
+                Console.ForegroundColor = ConsoleColor.White;
+                symbolpair = Console.ReadLine();
+                if (string.IsNullOrEmpty(symbolpair))
+                    return;
+                string pairend = symbolpair;
+                pairend = pairend.ToUpper();
+                if (pairend == "USDT" || pairend == "BUSD" || pairend == "TUSD")
+                    quantity = usd;
+                else
+                {
+                    WebCallResult<BinanceBookPrice> priceinbtc = client.Spot.Market.GetBookPrice(pairend + "USDT");
+                    quantity = Math.Round(usd / priceinbtc.Data.BestBidPrice, 8);
+                    Utilities.Write(ConsoleColor.Green, $"converting  " + usd + $" USD to  " + quantity + $" " + pairend);
+                }
                 if (config.discord_token.Length > 0)
                 {
                     Utilities.Write(ConsoleColor.Yellow, "Input symbol or Discord channel ID:");
@@ -210,6 +247,8 @@ namespace UsainBot
                             Thread.Sleep(100);
                         }
                     }
+                    else
+                        symbol = symbol.ToUpper();
 
                     //Exit the program if nothing was entered
                     if (string.IsNullOrEmpty(symbol))
@@ -227,7 +266,8 @@ namespace UsainBot
                     return;
                 //Try to execute the order
                 closet3 = 1;
-                ExecuteOrder(symbol, config.quantity, strategyrisk, sellStrategy, maxsecondsbeforesell, client, exchangeInfo);
+                client.ShouldCheckObjects = false;
+                ExecuteOrder(symbol, quantity, strategyrisk, sellStrategy, maxsecondsbeforesell, client, pairend, exchangeInfo);
                 client = new BinanceClient();
                 exchangeInfo = client.Spot.System.GetExchangeInfo();
                 client.Spot.Order.PlaceOrder("ETHBTC", OrderSide.Buy, OrderType.Market, null, 0);
@@ -247,8 +287,6 @@ namespace UsainBot
                 {
                     apiKey = "",
                     apiSecret = "",
-                    quantity = (decimal)0.00025,
-                    risktaking = (decimal)3.0,
                     discord_token = ""
                 });
                 File.WriteAllText("config.json", json);
@@ -258,13 +296,13 @@ namespace UsainBot
             return JsonConvert.DeserializeObject<Config>(File.ReadAllText("config.json"));
         }
 
-        private static void ExecuteOrder(string symbol, decimal quantity, decimal strategyrisk, decimal sellStrategy, decimal maxsecondsbeforesell, BinanceClient client, WebCallResult<BinanceExchangeInfo> exchangeInfo)
+        private static void ExecuteOrder(string symbol, decimal quantity, decimal strategyrisk, decimal sellStrategy, decimal maxsecondsbeforesell, BinanceClient client,string pairend, WebCallResult<BinanceExchangeInfo> exchangeInfo)
         {
             Stopwatch stopWatch = new Stopwatch();
             stopWatch.Start();
             using (client)
             {
-                string pair = symbol.ToUpper() + "BTC";
+                string pair = symbol + pairend;
                 client.ShouldCheckObjects = false;
                 WebCallResult<BinancePlacedOrder> order = client.Spot.Order.PlaceOrder(pair, OrderSide.Buy, OrderType.Market, null, quantity);
                 if (!order.Success)
@@ -286,7 +324,7 @@ namespace UsainBot
                     ts.Hours, ts.Minutes, ts.Seconds,
                     ts.Milliseconds);
                 Utilities.Write(ConsoleColor.Green, $"Order submitted and accepted, Got: {OrderQuantity} coins from {pair} at {paidPrice}, time: + {elapsedTime} ms");
-                BinanceSymbol symbolInfo = exchangeInfo.Data.Symbols.FirstOrDefault(s => s.QuoteAsset == "BTC" && s.BaseAsset == symbol.ToUpper());
+                BinanceSymbol symbolInfo = exchangeInfo.Data.Symbols.FirstOrDefault(s => s.QuoteAsset == pairend && s.BaseAsset == symbol);
                 if (symbolInfo == null)
                 {
                     Utilities.Write(ConsoleColor.Red, $"ERROR! Could not get symbol informations.");
