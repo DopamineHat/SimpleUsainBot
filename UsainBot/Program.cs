@@ -42,14 +42,14 @@ namespace UsainBot
         {
             Console.SetWindowSize(Console.LargestWindowWidth, Console.LargestWindowHeight);
             ShowWindow(ThisConsole, MAXIMIZE);
-            Console.Title = "UsainBot: loading...";
+            Console.Title = "UsainBot 24/7: loading...";
             Config config = LoadOrCreateConfig();
             if (config == null)
             {
                 Console.Read();
                 return;
             }
-            using (HttpClient clientapi = new HttpClient())
+/*            using (HttpClient clientapi = new HttpClient())
             {
                 clientapi.BaseAddress = new Uri("https://usainbot.com/api/");
                 Task<HttpResponseMessage> response = clientapi.GetAsync("?key=" + config.apiKey);
@@ -80,66 +80,9 @@ namespace UsainBot
                     Thread.Sleep(3000);
                     return;
                 }
-            }
-            Console.ForegroundColor = ConsoleColor.DarkGreen;
-            Console.WriteLine("Hello " + config.name + ", your license will expire on " + config.expiry);
-            Console.ForegroundColor = ConsoleColor.DarkGray;
-            Console.WriteLine($"                                                                                                                                                                                          .,.");
-            Console.WriteLine($"                                                                                                                                                                                    .* *****.");
-            Console.WriteLine($"                                                                                                                                                                                *, .* ****/*");
-            Console.WriteLine($"                                                                                                                                                                             , * ,///***/,");
-            Console.WriteLine($"                                                                                                                                                                        .*/* *//////*/  ");
-            Console.WriteLine($"                                                                                                                                                                    , */,, */////////*. *((,   ");
-            Console.WriteLine($"                                                                                                                                                                .* **////////**//*/. **/  .,    ");
-            Console.WriteLine($"                                                                                                                                                           ,./       ,/////**/**,.*/,,//(#/((*/.  ");
-            Console.WriteLine($"                                                                                                                                                          ..*           ////////.*//////***/(%%%%//  /");
-            Console.WriteLine($"                                                                                                                                                 .*.              /////,///////*///////(####*///, /");
-            Console.WriteLine($"                                                                                                                                            .*              ,/. ./,////*//**//*//**////(###(*///  * ");
-            Console.WriteLine($"                ,,,,.*, *   .                                                                                                          .*            .//*  ,/,///////////*/**/****////////***///,/. ");
-            Console.WriteLine($"             ,//////////,,.,,,/////*,,                                                                                            .,           ,//.  ./*,///////////////////******/(%//////////     ");
-            Console.WriteLine($"           , *////*,,. .           */**/**.                                                                                   ..          ./,   .//./////////////*********/*****,,,****,,,,,*/*  ");
-            Console.WriteLine($"          ,///****,.,**,...    .,      ,*/*                                                                             .        .*,      ,/,,////////////////////////*//////**///%%%%****,,**   ");
-            Console.WriteLine($"         ,//***************,,.       ..* ,//,,                                                                  .  .     ./,        **/,,/////**////////////////////,////   ");
-            Console.WriteLine($"         , , **///******,,,,,,           ,**//**.                                                           .        */      ***/**.,*///****/**//////////////////  ,    ");
-            Console.WriteLine($"        . ///////********,///*****,.      *///, */.                                                             ./  .//////*,///////**************////////////*    .        ");
-            Console.WriteLine($"        . ////*****/*/////////////**,,.    ./.,,,  ,                                             .            / ./////*///////////************/*////////////  *   .*        ");
-            Console.WriteLine($"        . ////*****/////////*,,**,,,,.,     *..*/*/*.                .//*.          ,*.        .            /*///*//////////////*/***/******//////////////. *  ,        ");
-            Console.WriteLine($"        /  //////////***//////***,,,,,....  ,.  ,  ,.,           /,        .*.             ** ,/*          .//////////////////**/*******/*///////////////..               ");
-            Console.WriteLine($"        ,, ,/////////***,,,*,****,,,,,,,,,....  *//*           ,   ***,,****   ***//       *.*////.,,,,,,,,*//*////////////**//********/////////////// /             ");
-            Console.WriteLine($"         .* *//**////**,,.****.***,,,,,**,,,..  //  ,     *//****//**////*/*********///**/*, .,,,,,,**********////*///////*////*/*/*///////////////.,.                   ");
-            Console.WriteLine($"          ., *///****/*****/****,,,,,,..,,,,,..,   .      *  .*/////////////////*////,. ,,*,,*******************///////*////////////////////////,.*               ");
-            Console.WriteLine($"            . * *******////*****/***,, .....,,*,,,.      /,,,,,,,,,,,,,,*////////,,*,*,,,********************/////////////////////////////////, ,              ");
-            Console.WriteLine($"              , ., ***/////*******///**,..,,,*,,****/**.////////***********,,///,,,**************************///////////////////////////.    .              ");
-            Console.WriteLine($"               *, ***//*//*///**/**,******,,******//**//////////////**///**,**//****/****/**/**///////*****////////////////////*,.*/*   ,                   ");
-            Console.WriteLine($"                 /******/////*,,,,*//**/**,*/*/////**//////////*/////*,*///*/////////////////////////****/////////////////////*     *             ");
-            Console.WriteLine($"                   /, *////***///////*******///////*//*///////**//*****///////////////////////**//////////////*   ./*.,        ,*                  ");
-            Console.WriteLine($"                    .*/, *///////////////////////////,,/////*//*****///////////////////////////////////////////.            ,                        ");
-            Console.WriteLine($"                         / *////////////////////////*,,,/*/////**////////////////////////////////,   /*//   ,       .   ,.                       ");
-            Console.WriteLine($"                           .* **//////////////////*/*,*.,./*//***/**////////////////////////////****,,*,/  .* /                                  ");
-            Console.WriteLine($"                                ,.,/////////*//////**.,///*,/******/////////////////////////////***/,,/*/    **  ,                           ");
-            Console.WriteLine($"                                     .  , **///////**///...,*,/*****//////////////////////////////,,*////  ./   *                            ");
-            Console.WriteLine($"                                     .  ,  ///////*/..,,,,,,*,****//**///////////////////////*,,*////////..   ,/ ,                   ");
-            Console.WriteLine($"                                .           ./////*.*,,,,**,..*,,*/////////////////////*****/////////////, .*//   /                  ");
-            Console.WriteLine($"                                              , /*////,,,,,,...../*****//////*****,**////////////////,////, .  .//  .                     ");
-            Console.WriteLine($"                                             ...//*/**,.........*//////////////,/,///////////////,//,*/////* ///*     /                 ");
-            Console.WriteLine($"                                      ./*      .,///*...//,,,/.,/**//////*,,*...,.,./////////,/,/////////**** ,    *.  *                        ");
-            Console.WriteLine($"                                  .//***,.    ,/////...,,,,,*/,,,***,,*,,,,.....,.,,,*///,,/////////////////// ./*   ,/.                              ");
-            Console.WriteLine($"                              , ***/**/*     /,////,..,,,*,/,,,,,,*/*,/.,,,,////(//*,,,,.*///////////***/////// .//(/.  .,                       ");
-            Console.WriteLine($"                           /, ******////*,.   /////*...,,,*,,,,.,*..****.,//*,...,.*,////*,*,//////////////////*/, ,.  ./,                    ");
-            Console.WriteLine($"                      .*//, ********//*///*,  *////...,,,,,,,,....,**,,..,**,.,,,,,,******%%%%(/####///////#%%%%//.%%%*     ,                     ");
-            Console.WriteLine($"                      , **/******/*********//////////,,,,,*..,***,.,*,,,,.,,,..,//////(/////*,***###///////(##%%// *.. ,#%%#  (                              ");
-            Console.WriteLine($"                    /********/******//////////////////*,.....*(#/*,,......,*,,,,,,,,*,...........,///////**//(///// /*..    .%%.#                       ");
-            Console.WriteLine($"                    *//(/*////*//*****////////*,///////*///..****./*,............,////,.,/////////////////////////**. ,//(////.  /*                    ");
-            Console.WriteLine($"                    . * ***((((*****///////////**////////,,../(**(,........,//////////**,...............*,//////////////. /////. /// *                  ");
-            Console.WriteLine($"                      **/*/(((/**//////////////////////%(/#(,,.....,***,............,,,,,,,,,****///////////////////////..    .,..*  //.                 ");
-            Console.WriteLine($"                     ****///(//####///(/////(///##((#*,/.(,//,....,,,,,,,,,,*/,*/////////////*/*,,,,,,,,,,,/,//////////// ///*  .  .  ./.                  ");
-            Console.WriteLine($"                         *****///////////////***//**    *////  ,,,,*/,**/////////////*,,,,,,,,,,,,,,,,,,,,,,,,**///////****/ .    ,*     ,*                          ");
-            Console.WriteLine($"                      ****///////////////*.*.            /*////*/////,.........,,,,,,,,,,,,,,,....,*//////////,///*/*****/ *,,,,    *//,                           ");
-            Console.WriteLine($"                        , ****////////////.,/      .,        /    .................,......,//////////////**,,,,,,,,/,/////////* ,......    ,/                            ");
-            Console.WriteLine($"                           * .* ***/////*,,*..,,,               *       ,,*//////*,,/////*,..................,*///////////////////. ,////////////*                    ");
-            Console.WriteLine($"                               .////,                          ..   //   ,.......................**,/////////////*********/*///////,  .          ,/*             ");
-            Console.WriteLine($"                                                                //,      ................,,*/////*,,..................,///////////////  ////////,     ,         ");
-            Console.WriteLine($"                                                                  /        , *//////*,,,....,,..................,*//////,........,,.///// .,             * ");
+            } */
+        //    Console.ForegroundColor = ConsoleColor.DarkGreen;
+        //    Console.WriteLine("Hello " + config.name + ", your license will expire on " + config.expiry);
             Console.ForegroundColor = ConsoleColor.White;
             try
             {
@@ -163,7 +106,6 @@ namespace UsainBot
             var client = new BinanceClient();
             Utilities.Write(ConsoleColor.Cyan, $"Loading exchange info...");
             WebCallResult<BinanceExchangeInfo> exchangeInfo = client.Spot.System.GetExchangeInfo();
-            client.Spot.Order.PlaceOrder("ETHBTC", OrderSide.Buy, OrderType.Market, null, 0);
             var t = exchangeInfo.Data.ServerTime;
             if (!exchangeInfo.Success)
             {
@@ -188,6 +130,18 @@ namespace UsainBot
                     {
                         float reply = client.Spot.System.Ping().Data;
                         Console.Title = "Ping to Binance: " + reply + "ms";
+                        Thread.Sleep(500);
+                    }
+                }
+                Thread t4 = new Thread(FakeThread);
+                t4.Start();
+                void FakeThread()
+                {
+                    while (closet3 == 0)
+                    {
+                        client.Spot.Order.PlaceOrder("ETHBTC", OrderSide.Buy, OrderType.Market, null, 0);
+                        Utilities.Write(ConsoleColor.Green, $"test order sent");
+                        Thread.Sleep(100000);
                     }
                 }
                 ShowWindow(ThisConsole, RESTORE);
@@ -198,11 +152,11 @@ namespace UsainBot
                 if (string.IsNullOrEmpty(qtusd))
                     return;
                 decimal usd = Convert.ToDecimal(qtusd);
-                if (usd < 10)
+            /*    if (usd < 10)
                 {
                     Utilities.Write(ConsoleColor.Red, $"Has to be higher than 10");
                     return;
-                }
+                } */
                 Utilities.Write(ConsoleColor.Yellow, "On a scale of 1 to 5, how much risk should i take?");
                 Console.ForegroundColor = ConsoleColor.White;
                 srisk = Console.ReadLine();
@@ -247,8 +201,7 @@ namespace UsainBot
                             Thread.Sleep(100);
                         }
                     }
-                    else
-                        symbol = symbol.ToUpper();
+                    symbol = symbol.ToUpper();
 
                     //Exit the program if nothing was entered
                     if (string.IsNullOrEmpty(symbol))
@@ -270,7 +223,6 @@ namespace UsainBot
                 ExecuteOrder(symbol, quantity, strategyrisk, sellStrategy, maxsecondsbeforesell, client, pairend, exchangeInfo);
                 client = new BinanceClient();
                 exchangeInfo = client.Spot.System.GetExchangeInfo();
-                client.Spot.Order.PlaceOrder("ETHBTC", OrderSide.Buy, OrderType.Market, null, 0);
                 if (!exchangeInfo.Success)
                 {
                     Utilities.Write(ConsoleColor.Red, $"ERROR! Could not exchange informations. Error code: " + exchangeInfo.Error?.Message);
@@ -303,7 +255,6 @@ namespace UsainBot
             using (client)
             {
                 string pair = symbol + pairend;
-                client.ShouldCheckObjects = false;
                 WebCallResult<BinancePlacedOrder> order = client.Spot.Order.PlaceOrder(pair, OrderSide.Buy, OrderType.Market, null, quantity);
                 if (!order.Success)
                 {
@@ -341,11 +292,13 @@ namespace UsainBot
                 decimal volasellmax = (decimal).01;
                 decimal currentstoploss = 0;
                 List<decimal> tab = new List<decimal>();
+                List<decimal> tabAsk = new List<decimal>();
                 int count = -1;
                 int stoplossex = 0;
                 int first = 1;
                 int usainsell = 0;
                 int imincharge = 0;
+                int protect = 0;
                 Thread t = new Thread(NewThread);
                 t.Start();
                 WebCallResult<BinanceBookPrice> priceResult3 = client.Spot.Market.GetBookPrice(pair);
@@ -359,22 +312,81 @@ namespace UsainBot
                         count++;
                         priceResult2 = client.Spot.Market.GetBookPrice(pair);
                         if (priceResult2.Success)
+                        {
                             tab.Add(priceResult2.Data.BestBidPrice);
+                            tabAsk.Add(priceResult2.Data.BestAskPrice);
+                        }
                         else
                             return;
                         if (count % 10 == 0 && count > 25)
                         {
+                            if (count == 30)
+                                protect = 1;
                             int countca = count;
                             decimal espa = 0;
                             int x2a = -1;
+                            decimal tabAskavg = 0;
                             while (--countca > 0 && ++x2a < 10)
                             {
                                 espa += (tab[countca] - tab[countca - 1]) / 10;
+                                tabAskavg += tabAsk[countca];
                             }
+                            --x2a;
+                            ++countca;
                             decimal esp2a = espa / 3;
                             while (--countca > 0 && ++x2a < 30)
                             {
                                 esp2a += (tab[countca] - tab[countca - 1]) / 30;
+                                tabAskavg += tabAsk[countca];
+                            }
+                            tabAskavg += tabAsk[countca];
+                            if (protect == 1)
+                            {
+                                protect = 0;
+                                tabAskavg /= 30;
+                                if (tabAskavg < paidPrice && usainsell == 0 && imincharge == 0)
+                                {
+                                    imincharge = 1;
+                                    WebCallResult<IEnumerable<BinanceCancelledId>> orderspanic = client.Spot.Order.CancelAllOpenOrders(symbol: pair);
+                                    WebCallResult<BinancePlacedOrder> ordersell = client.Spot.Order.PlaceOrder(pair, OrderSide.Sell, OrderType.Limit, OrderQuantity, price: Math.Round(priceResult2.Data.BestAskPrice * sellPriceAskRatio - (decimal)0.00000001, symbolPrecision), timeInForce: TimeInForce.GoodTillCancel);
+                                    while (!ordersell.Success)
+                                    {
+                                        Utilities.Write(ConsoleColor.Red, $"ERROR! Could not place the Limit order sell, trying another time. Error code: " + ordersell.Error?.Message);
+                                        orderspanic = client.Spot.Order.CancelAllOpenOrders(symbol: pair);
+                                        ordersell = client.Spot.Order.PlaceOrder(pair, OrderSide.Sell, OrderType.Limit, OrderQuantity, price: Math.Round(priceResult2.Data.BestAskPrice * sellPriceAskRatio - (decimal)0.00000001, symbolPrecision), timeInForce: TimeInForce.GoodTillCancel);
+                                    }
+                                    Thread.Sleep(1000);
+                                    int y = 0;
+                                    while (y == 0)
+                                    {
+                                        paidPrice = ordersell.Data.Fills.Average(trade => trade.Price);
+                                        if (ordersell.Data.Fills != null)
+                                        {
+                                            if (ordersell.Data.QuantityFilled < OrderQuantity)
+                                            {
+                                                try
+                                                {
+                                                    orderspanic = client.Spot.Order.CancelAllOpenOrders(symbol: pair);
+                                                    WebCallResult<BinancePlacedOrder> ordersell4 = client.Spot.Order.PlaceOrder(pair, OrderSide.Sell, OrderType.Limit, OrderQuantity, price: Math.Round(priceResult2.Data.BestBidPrice * sellPriceRiskRatio, symbolPrecision), timeInForce: TimeInForce.GoodTillCancel); // for if the previous limit order is filled but not 100%
+                                                }
+                                                finally
+                                                {
+                                                    Utilities.Write(ConsoleColor.Green, "100% sold");
+                                                }
+                                            }
+                                            y = 1;
+                                        }
+                                        else
+                                        {
+                                            priceResult2 = client.Spot.Market.GetBookPrice(pair);
+                                            orderspanic = client.Spot.Order.CancelAllOpenOrders(symbol: pair);
+                                            ordersell = client.Spot.Order.PlaceOrder(pair, OrderSide.Sell, OrderType.Limit, OrderQuantity, price: Math.Round(priceResult2.Data.BestAskPrice * sellPriceAskRatio - (decimal)0.00000001, symbolPrecision), timeInForce: TimeInForce.GoodTillCancel);
+                                        }
+                                    }
+                                    usainsell = 1;
+                                    Utilities.Write(ConsoleColor.Green, "UsainBot DUMP PROTECTION SOLD successfully  " + OrderQuantity + " " + ordersell.Data.Symbol + $" at " + paidPrice);
+                                    return;
+                                }
                             }
                             Utilities.Write(ConsoleColor.Green, $" {Math.Round(espa / priceResult2.Data.BestBidPrice * 100000, 2)}");
                             Utilities.Write(ConsoleColor.Red, $" {Math.Round(esp2a / priceResult2.Data.BestBidPrice * 100000, 2)}");
@@ -398,6 +410,7 @@ namespace UsainBot
                                     while (!ordersell.Success)
                                     {
                                         Utilities.Write(ConsoleColor.Red, $"ERROR! Could not place the Limit order sell, trying another time. Error code: " + ordersell.Error?.Message);
+                                        orderspanic = client.Spot.Order.CancelAllOpenOrders(symbol: pair);
                                         ordersell = client.Spot.Order.PlaceOrder(pair, OrderSide.Sell, OrderType.Limit, OrderQuantity, price: Math.Round(priceResult2.Data.BestAskPrice * sellPriceAskRatio - (decimal)0.00000001, symbolPrecision), timeInForce: TimeInForce.GoodTillCancel);
                                     }
                                     Thread.Sleep(1000);
@@ -444,29 +457,86 @@ namespace UsainBot
                     while ((timestamp + maxsecondsbeforesell * 10000000) > DateTime.Now.ToFileTime() && stoplossex == 0 && imincharge == 0)
                     {
                         count++;
-                        try
+                        priceResult3 = client.Spot.Market.GetBookPrice(pair);
+                        if (priceResult3.Success)
                         {
-                            priceResult3 = client.Spot.Market.GetBookPrice(pair);
                             tab.Add(priceResult3.Data.BestBidPrice);
+                            tabAsk.Add(priceResult3.Data.BestAskPrice);
                         }
-                        catch (Exception e)
-                        {
-                            tab.Add(tab[count - 1]);
-                        }
+                        else
+                            return;
                         Console.Title = $"Price for {pair} is {priceResult3.Data.BestBidPrice} to {priceResult3.Data.BestAskPrice} in iteration  " + count + "  negative volatility ratio is " + Math.Round(volasellmax, 2) + " stop limit is placed at " + currentstoploss;
                         if ((count + 5) % 10 == 0 && count > 25)
                         {
+                            if (count == 30)
+                                protect = 1;
                             int countc = count;
                             decimal esp = 0;
                             int x2 = -1;
+                            decimal tabAskavg2 = 0;
                             while (--countc > 0 && ++x2 < 10)
                             {
                                 esp += (tab[countc] - tab[countc - 1]) / 10;
+                                tabAskavg2 += tabAsk[countc];
                             }
+                            --x2;
+                            ++countc;
                             decimal esp2 = esp / 3;
                             while (--countc > 0 && ++x2 < 30)
                             {
                                 esp2 += (tab[countc] - tab[countc - 1]) / 30;
+                                tabAskavg2 += tabAsk[countc];
+                            }
+                            tabAskavg2 += tabAsk[countc];
+                            if (protect == 1)
+                            {
+                                protect = 0;
+                                tabAskavg2 /= 30;
+                                Console.WriteLine(tabAskavg2);
+                                Console.WriteLine(paidPrice);
+                                if (tabAskavg2 < paidPrice && usainsell == 0 && imincharge == 0)
+                                {
+                                    imincharge = 1;
+                                    WebCallResult<IEnumerable<BinanceCancelledId>> orderspanic = client.Spot.Order.CancelAllOpenOrders(symbol: pair);
+                                    WebCallResult<BinancePlacedOrder> ordersell = client.Spot.Order.PlaceOrder(pair, OrderSide.Sell, OrderType.Limit, OrderQuantity, price: Math.Round(priceResult3.Data.BestAskPrice * sellPriceAskRatio - (decimal)0.00000001, symbolPrecision), timeInForce: TimeInForce.GoodTillCancel);
+                                    while (!ordersell.Success)
+                                    {
+                                        Utilities.Write(ConsoleColor.Red, $"ERROR! Could not place the Limit order sell, trying another time. Error code: " + ordersell.Error?.Message);
+                                        orderspanic = client.Spot.Order.CancelAllOpenOrders(symbol: pair);
+                                        ordersell = client.Spot.Order.PlaceOrder(pair, OrderSide.Sell, OrderType.Limit, OrderQuantity, price: Math.Round(priceResult3.Data.BestAskPrice * sellPriceAskRatio - (decimal)0.00000001, symbolPrecision), timeInForce: TimeInForce.GoodTillCancel);
+                                    }
+                                    Thread.Sleep(1000);
+                                    int y = 0;
+                                    while (y == 0)
+                                    {
+                                        paidPrice = ordersell.Data.Fills.Average(trade => trade.Price);
+                                        if (ordersell.Data.Fills != null)
+                                        {
+                                            if (ordersell.Data.QuantityFilled < OrderQuantity)
+                                            {
+                                                try
+                                                {
+                                                    orderspanic = client.Spot.Order.CancelAllOpenOrders(symbol: pair);
+                                                    WebCallResult<BinancePlacedOrder> ordersell4 = client.Spot.Order.PlaceOrder(pair, OrderSide.Sell, OrderType.Limit, OrderQuantity, price: Math.Round(priceResult3.Data.BestBidPrice * sellPriceRiskRatio, symbolPrecision), timeInForce: TimeInForce.GoodTillCancel); // for if the previous limit order is filled but not 100%
+                                                }
+                                                finally
+                                                {
+                                                    Utilities.Write(ConsoleColor.Green, "100% sold");
+                                                }
+                                            }
+                                            y = 1;
+                                        }
+                                        else
+                                        {
+                                            priceResult3 = client.Spot.Market.GetBookPrice(pair);
+                                            orderspanic = client.Spot.Order.CancelAllOpenOrders(symbol: pair);
+                                            ordersell = client.Spot.Order.PlaceOrder(pair, OrderSide.Sell, OrderType.Limit, OrderQuantity, price: Math.Round(priceResult3.Data.BestAskPrice * sellPriceAskRatio - (decimal)0.00000001, symbolPrecision), timeInForce: TimeInForce.GoodTillCancel);
+                                        }
+                                    }
+                                    usainsell = 1;
+                                    Utilities.Write(ConsoleColor.Green, "UsainBot DUMP PROTECTION SOLD successfully  " + OrderQuantity + " " + ordersell.Data.Symbol + $" at " + paidPrice);
+                                    return;
+                                }
                             }
                             Utilities.Write(ConsoleColor.Green, $" {Math.Round(esp / priceResult3.Data.BestBidPrice * 100000, 2)}");
                             Utilities.Write(ConsoleColor.Red, $" {Math.Round(esp2 / priceResult3.Data.BestBidPrice * 100000, 2)}");
@@ -490,6 +560,7 @@ namespace UsainBot
                                     while (!ordersell2.Success)
                                     {
                                         Utilities.Write(ConsoleColor.Red, $"ERROR! Could not place the Limit order sell, trying another time. Error code: " + ordersell2.Error?.Message);
+                                        orderspanic = client.Spot.Order.CancelAllOpenOrders(symbol: pair);
                                         ordersell2 = client.Spot.Order.PlaceOrder(pair, OrderSide.Sell, OrderType.Limit, OrderQuantity, price: Math.Round(priceResult3.Data.BestAskPrice * sellPriceAskRatio - (decimal)0.00000001, symbolPrecision), timeInForce: TimeInForce.GoodTillCancel);
                                     }
                                     Thread.Sleep(1000);
