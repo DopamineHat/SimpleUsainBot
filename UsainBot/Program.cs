@@ -42,7 +42,7 @@ namespace UsainBot
         {
             Console.SetWindowSize(Console.LargestWindowWidth, Console.LargestWindowHeight);
             ShowWindow(ThisConsole, MAXIMIZE);
-            Console.Title = "UsainBot 24/7: loading...";
+            Console.Title = "UsainBot: loading...";
             Config config = LoadOrCreateConfig();
             if (config == null)
             {
@@ -117,10 +117,17 @@ namespace UsainBot
             while (true)
             {
                 int closet3 = 0;
+                decimal buyorderprice = 0;
+                decimal sellorderprice = 0;
+                decimal tp = 0;
+                string mode;
                 string symbol;
                 string symbolpair;
                 string qtusd;
                 string srisk;
+                string buyorderpricestring;
+                string sellorderpricestring;
+                string tpstring;
                 decimal quantity;
                 Thread t3 = new Thread(PingThread);
                 t3.Start();
@@ -140,87 +147,175 @@ namespace UsainBot
                     while (closet3 == 0)
                     {
                         client.Spot.Order.PlaceOrder("ETHBTC", OrderSide.Buy, OrderType.Market, null, 0);
-                        Utilities.Write(ConsoleColor.Green, $"test order sent");
+                     //   Utilities.Write(ConsoleColor.Green, $"test order sent");
                         Thread.Sleep(100000);
                     }
                 }
                 ShowWindow(ThisConsole, RESTORE);
                 Console.SetWindowSize(80, 40);
-                Utilities.Write(ConsoleColor.Yellow, "How much USD to allocate?");
+                Utilities.Write(ConsoleColor.Yellow, "select mode");
+                Utilities.Write(ConsoleColor.Yellow, "input 1: high volatility AI long");
+                Utilities.Write(ConsoleColor.Yellow, "input 2: listing market maker script");
+                Utilities.Write(ConsoleColor.Yellow, "input 3: volatility listener");
+                Utilities.Write(ConsoleColor.Yellow, "input 4: high frequency orderbook listener");
                 Console.ForegroundColor = ConsoleColor.White;
-                qtusd = Console.ReadLine();
-                if (string.IsNullOrEmpty(qtusd))
+                mode = Console.ReadLine();
+                if (string.IsNullOrEmpty(mode))
                     return;
-                decimal usd = Convert.ToDecimal(qtusd);
-            /*    if (usd < 10)
+                if (mode == "1")
                 {
-                    Utilities.Write(ConsoleColor.Red, $"Has to be higher than 10");
-                    return;
-                } */
-                Utilities.Write(ConsoleColor.Yellow, "On a scale of 1 to 5, how much risk should i take?");
-                Console.ForegroundColor = ConsoleColor.White;
-                srisk = Console.ReadLine();
-                if (string.IsNullOrEmpty(srisk))
-                    return;
-                decimal risktaking = Convert.ToDecimal(srisk);
-                decimal strategyrisk = Math.Round((decimal)Math.Pow((double)risktaking - 0.5, 1.5), 3);
-                decimal sellStrategy = Math.Round((decimal).95 - risktaking * (decimal).03, 3);
-                decimal maxsecondsbeforesell = risktaking * (decimal)6.0;
-                Utilities.Write(ConsoleColor.Green, $"Usain Bot risk taking set to  " + risktaking);
-                Utilities.Write(ConsoleColor.Yellow, "Input pair:");
-                Console.ForegroundColor = ConsoleColor.White;
-                symbolpair = Console.ReadLine();
-                if (string.IsNullOrEmpty(symbolpair))
-                    return;
-                string pairend = symbolpair;
-                pairend = pairend.ToUpper();
-                if (pairend == "USDT" || pairend == "BUSD" || pairend == "TUSD")
-                    quantity = usd;
-                else
-                {
-                    WebCallResult<BinanceBookPrice> priceinbtc = client.Spot.Market.GetBookPrice(pairend + "USDT");
-                    quantity = Math.Round(usd / priceinbtc.Data.BestBidPrice, 8);
-                    Utilities.Write(ConsoleColor.Green, $"converting  " + usd + $" USD to  " + quantity + $" " + pairend);
-                }
-                if (config.discord_token.Length > 0)
-                {
-                    Utilities.Write(ConsoleColor.Yellow, "Input symbol or Discord channel ID:");
+                    Utilities.Write(ConsoleColor.Yellow, "How much USD to allocate?");
                     Console.ForegroundColor = ConsoleColor.White;
-                    symbol = Console.ReadLine();
-
-                    // if line is only digits, it's safe to assume it's a Discord channel ID.
-                    if (symbol.All(c => c >= '0' && c <= '9'))
+                    qtusd = Console.ReadLine();
+                    if (string.IsNullOrEmpty(qtusd))
+                        return;
+                    decimal usd = Convert.ToDecimal(qtusd);
+                    if (usd < 8)
                     {
-                        string channelId = symbol;
-                        symbol = null;
-                        Console.WriteLine("Looking for symbol...");
-                        // Scrape channel every 100ms
-                        while (null == symbol)
-                        {
-                            symbol = ScrapeChannel(config.discord_token, channelId);
-                            Thread.Sleep(100);
-                        }
+                        Utilities.Write(ConsoleColor.Red, $"Has to be higher than 8");
+                        return;
                     }
-                    symbol = symbol.ToUpper();
+                    Utilities.Write(ConsoleColor.Yellow, "Input pair:");
+                    Console.ForegroundColor = ConsoleColor.White;
+                    symbolpair = Console.ReadLine();
+                    if (string.IsNullOrEmpty(symbolpair))
+                        return;
+                    string pairend = symbolpair;
+                    pairend = pairend.ToUpper();
+                    if (pairend == "USDT" || pairend == "BUSD" || pairend == "TUSD")
+                        quantity = usd;
+                    else
+                    {
+                        WebCallResult<BinanceBookPrice> priceinbtc = client.Spot.Market.GetBookPrice(pairend + "USDT");
+                        quantity = Math.Round(usd / priceinbtc.Data.BestBidPrice, 8);
+                        Utilities.Write(ConsoleColor.Green, $"converting  " + usd + $" USD to  " + quantity + $" " + pairend);
+                    }
+                    Utilities.Write(ConsoleColor.Green, "Entering high volatility AI long mode");
+                    Utilities.Write(ConsoleColor.Yellow, "On a scale of 1 to 5, how much risk should i take?");
+                    Console.ForegroundColor = ConsoleColor.White;
+                    srisk = Console.ReadLine();
+                    if (string.IsNullOrEmpty(srisk))
+                        return;
+                    decimal risktaking = Convert.ToDecimal(srisk);
+                    decimal strategyrisk = Math.Round((decimal)Math.Pow((double)risktaking - 0.5, 1.5), 3);
+                    decimal sellStrategy = Math.Round((decimal).95 - risktaking * (decimal).03, 3);
+                    decimal maxsecondsbeforesell = risktaking * (decimal)6.0;
+                    Utilities.Write(ConsoleColor.Green, $"Usain Bot risk taking set to  " + risktaking);
+                    if (config.discord_token.Length > 0)
+                    {
+                        Utilities.Write(ConsoleColor.Yellow, "Input symbol or Discord channel ID:");
+                        Console.ForegroundColor = ConsoleColor.White;
+                        symbol = Console.ReadLine();
 
+                        // if line is only digits, it's safe to assume it's a Discord channel ID.
+                        if (symbol.All(c => c >= '0' && c <= '9'))
+                        {
+                            string channelId = symbol;
+                            symbol = null;
+                            Console.WriteLine("Looking for symbol...");
+                            // Scrape channel every 100ms
+                            while (null == symbol)
+                            {
+                                symbol = ScrapeChannel(config.discord_token, channelId);
+                                Thread.Sleep(100);
+                            }
+                        }
+                        symbol = symbol.ToUpper();
+
+                        //Exit the program if nothing was entered
+                        if (string.IsNullOrEmpty(symbol))
+                            return;
+                    }
+                    else
+                    {
+                        //Wait for symbol input
+                        Utilities.Write(ConsoleColor.Yellow, "Input symbol: ");
+                        Console.ForegroundColor = ConsoleColor.White;
+                        symbol = Console.ReadLine();
+                        symbol = symbol.ToUpper();
+                    }
                     //Exit the program if nothing was entered
                     if (string.IsNullOrEmpty(symbol))
                         return;
+                    //Try to execute the order
+                    closet3 = 1;
+                    client.ShouldCheckObjects = false;
+                    ExecuteOrderLong(symbol, quantity, strategyrisk, sellStrategy, maxsecondsbeforesell, client, pairend, exchangeInfo);
                 }
-                else
+                else if (mode == "2")
                 {
-                    //Wait for symbol input
+                    Utilities.Write(ConsoleColor.Yellow, "How much USD to allocate?");
+                    Console.ForegroundColor = ConsoleColor.White;
+                    qtusd = Console.ReadLine();
+                    if (string.IsNullOrEmpty(qtusd))
+                        return;
+                    decimal usd = Convert.ToDecimal(qtusd);
+                    if (usd < 8)
+                    {
+                        Utilities.Write(ConsoleColor.Red, $"Has to be higher than 8");
+                        return;
+                    }
+                    Utilities.Write(ConsoleColor.Yellow, "Input pair:");
+                    Console.ForegroundColor = ConsoleColor.White;
+                    symbolpair = Console.ReadLine();
+                    if (string.IsNullOrEmpty(symbolpair))
+                        return;
+                    string pairend = symbolpair;
+                    pairend = pairend.ToUpper();
+                    if (pairend == "USDT" || pairend == "BUSD" || pairend == "TUSD")
+                        quantity = usd;
+                    else
+                    {
+                        WebCallResult<BinanceBookPrice> priceinbtc = client.Spot.Market.GetBookPrice(pairend + "USDT");
+                        quantity = Math.Round(usd / priceinbtc.Data.BestBidPrice, 8);
+                        Utilities.Write(ConsoleColor.Green, $"converting  " + usd + $" USD to  " + quantity + $" " + pairend);
+                    }
+                    Utilities.Write(ConsoleColor.Yellow, "Input limit long order price in BTC:");
+                    Console.ForegroundColor = ConsoleColor.White;
+                    buyorderpricestring = Console.ReadLine();
+                    if (string.IsNullOrEmpty(buyorderpricestring))
+                        return;
+                    buyorderprice = Convert.ToDecimal(buyorderpricestring);
+                    Utilities.Write(ConsoleColor.Yellow, "Input limit sell order price in BTC:");
+                    Console.ForegroundColor = ConsoleColor.White;
+                    sellorderpricestring = Console.ReadLine();
+                    if (string.IsNullOrEmpty(sellorderpricestring))
+                        return;
+                    sellorderprice = Convert.ToDecimal(sellorderpricestring);
+                    Console.ForegroundColor = ConsoleColor.White;
                     Utilities.Write(ConsoleColor.Yellow, "Input symbol: ");
                     Console.ForegroundColor = ConsoleColor.White;
                     symbol = Console.ReadLine();
+                    symbol = symbol.ToUpper();
+                    if (string.IsNullOrEmpty(symbol))
+                        return;
+                    closet3 = 1;
+                    ExecuteOrderListing(symbol, quantity, client, pairend, exchangeInfo, buyorderprice, sellorderprice);
                 }
-                //Exit the program if nothing was entered
-                if (string.IsNullOrEmpty(symbol))
-                    return;
-                //Try to execute the order
-                closet3 = 1;
-                client.ShouldCheckObjects = false;
-                ExecuteOrder(symbol, quantity, strategyrisk, sellStrategy, maxsecondsbeforesell, client, pairend, exchangeInfo);
+                else if (mode == "4")
+                {
+                    Utilities.Write(ConsoleColor.Yellow, "Input pair:");
+                    Console.ForegroundColor = ConsoleColor.White;
+                    symbolpair = Console.ReadLine();
+                    if (string.IsNullOrEmpty(symbolpair))
+                        return;
+                    string pairend = symbolpair;
+                    pairend = pairend.ToUpper();
+                    Utilities.Write(ConsoleColor.Yellow, "Input the timespan in which you want to listen:");
+                    Console.ForegroundColor = ConsoleColor.White;
+                    tpstring = Console.ReadLine();
+                    if (string.IsNullOrEmpty(tpstring))
+                        return;
+                    tp = Convert.ToDecimal(tpstring);
+                    Utilities.Write(ConsoleColor.Yellow, "Input symbol: ");
+                    Console.ForegroundColor = ConsoleColor.White;
+                    symbol = Console.ReadLine();
+                    symbol = symbol.ToUpper();
+                    if (string.IsNullOrEmpty(symbol))
+                        return;
+                    closet3 = 1;
+                    Listener(symbol, client, pairend, exchangeInfo, tp);
+                }
                 client = new BinanceClient();
                 exchangeInfo = client.Spot.System.GetExchangeInfo();
                 if (!exchangeInfo.Success)
@@ -248,7 +343,7 @@ namespace UsainBot
             return JsonConvert.DeserializeObject<Config>(File.ReadAllText("config.json"));
         }
 
-        private static void ExecuteOrder(string symbol, decimal quantity, decimal strategyrisk, decimal sellStrategy, decimal maxsecondsbeforesell, BinanceClient client,string pairend, WebCallResult<BinanceExchangeInfo> exchangeInfo)
+        private static void ExecuteOrderLong(string symbol, decimal quantity, decimal strategyrisk, decimal sellStrategy, decimal maxsecondsbeforesell, BinanceClient client,string pairend, WebCallResult<BinanceExchangeInfo> exchangeInfo)
         {
             Stopwatch stopWatch = new Stopwatch();
             stopWatch.Start();
@@ -256,11 +351,6 @@ namespace UsainBot
             {
                 string pair = symbol + pairend;
                 WebCallResult<BinancePlacedOrder> order = client.Spot.Order.PlaceOrder(pair, OrderSide.Buy, OrderType.Market, null, quantity);
-                if (!order.Success)
-                {
-                    Utilities.Write(ConsoleColor.Red, $"ERROR! Could not place the Market order. Error code: " + order.Error?.Message);
-                    return;
-                }
                 stopWatch.Stop();
                 var timestamp = DateTime.Now.ToFileTime();
                 TimeSpan ts = stopWatch.Elapsed;
@@ -682,6 +772,159 @@ namespace UsainBot
                     }
                 }
                 Thread.Sleep(2000);
+            }
+        }
+
+        private static void ExecuteOrderListing(string symbol, decimal quantity, BinanceClient client, string pairend, WebCallResult<BinanceExchangeInfo> exchangeInfo, decimal buyorderprice, decimal sellorderprice)
+        {
+            using (client)
+            {
+                string pair = symbol + pairend;
+                WebCallResult < BinanceBookPrice > priceResult69 = client.Spot.Market.GetBookPrice(pair);
+                BinanceSymbol symbolInfo2 = exchangeInfo.Data.Symbols.FirstOrDefault(s => s.QuoteAsset == pairend && s.BaseAsset == symbol);
+                if (symbolInfo2 == null)
+                {
+                    Utilities.Write(ConsoleColor.Red, $"ERROR! Could not get symbol informations.");
+                    return;
+                }
+                int symbolStep = 1;
+                decimal stepsize = symbolInfo2.LotSizeFilter.StepSize;
+                while ((stepsize = stepsize * 10) < 1)
+                    ++symbolStep;
+                quantity = Math.Round(quantity / priceResult69.Data.BestAskPrice, symbolStep);
+                WebCallResult<BinancePlacedOrder> order = client.Spot.Order.PlaceOrder(pair, OrderSide.Buy, OrderType.Limit, quantity, price: buyorderprice, timeInForce: TimeInForce.GoodTillCancel); 
+                if (!order.Success)
+                {
+                    Utilities.Write(ConsoleColor.Red, $"ERROR! Could not place the Market order. Error code: " + order.Error?.Message);
+                    return;
+                }
+                else
+                    Utilities.Write(ConsoleColor.Green, $"Order placed: {quantity} coins from {pair} at {buyorderprice}");
+                Thread.Sleep(5000);
+                WebCallResult<BinancePlacedOrder> ordersellXD = client.Spot.Order.PlaceOrder(pair, OrderSide.Sell, OrderType.Limit, quantity, price: sellorderprice, timeInForce: TimeInForce.GoodTillCancel);
+                return;
+            }
+        }
+
+        private static void Listener(string symbol, BinanceClient client, string pairend, WebCallResult<BinanceExchangeInfo> exchangeInfo, decimal maxsecondsbeforesell)
+        {
+            Stopwatch stopWatch = new Stopwatch();
+            stopWatch.Start();
+            using (client)
+            {
+                string pair = symbol + pairend;
+                stopWatch.Stop();
+                var timestamp = DateTime.Now.ToFileTime();
+                BinanceSymbol symbolInfo = exchangeInfo.Data.Symbols.FirstOrDefault(s => s.QuoteAsset == pairend && s.BaseAsset == symbol);
+                if (symbolInfo == null)
+                {
+                    Utilities.Write(ConsoleColor.Red, $"ERROR! Could not get symbol informations.");
+                    return;
+                }
+                int symbolPrecision = 1;
+                decimal ticksize = symbolInfo.PriceFilter.TickSize;
+                while ((ticksize = ticksize * 10) < 1)
+                    ++symbolPrecision;
+                List<string> tabBid = new List<string>();
+                List<string> tabAsk = new List<string>();
+                List<string> tabTime = new List<string>();
+                int count = -1;
+                Thread t = new Thread(NewThread);
+                t.Start();
+                WebCallResult<BinanceBookPrice> priceResult3 = client.Spot.Market.GetBookPrice(pair);
+                Thread t2 = new Thread(NewThread2);
+                t2.Start();
+                WebCallResult<BinanceBookPrice> priceResult2 = client.Spot.Market.GetBookPrice(pair);
+                Thread t3 = new Thread(NewThread3);
+                t3.Start();
+                WebCallResult<BinanceBookPrice> priceResult5 = client.Spot.Market.GetBookPrice(pair);
+                Thread t4 = new Thread(NewThread4);
+                t4.Start();
+                WebCallResult<BinanceBookPrice> priceResult6 = client.Spot.Market.GetBookPrice(pair);
+                void NewThread()
+                {
+                    while ((timestamp + maxsecondsbeforesell * 10000000) > DateTime.Now.ToFileTime())
+                    {
+                        count++;
+                        priceResult2 = client.Spot.Market.GetBookPrice(pair);
+                        if (priceResult2.Success)
+                        {
+                            tabBid.Add(priceResult2.Data.BestBidPrice.ToString());
+                            tabAsk.Add(priceResult2.Data.BestAskPrice.ToString());
+                            tabTime.Add(DateTime.Now.ToFileTime().ToString());
+                        }
+                        else
+                            return;
+                    }
+                }
+                void NewThread2()
+                {
+                    while ((timestamp + maxsecondsbeforesell * 10000000) > DateTime.Now.ToFileTime())
+                    {
+                        count++;
+                        priceResult3 = client.Spot.Market.GetBookPrice(pair);
+                        if (priceResult3.Success)
+                        {
+                            tabBid.Add(priceResult3.Data.BestBidPrice.ToString());
+                            tabAsk.Add(priceResult3.Data.BestAskPrice.ToString());
+                            tabTime.Add(DateTime.Now.ToFileTime().ToString());
+                        }
+                        else
+                            return;
+                    }
+                }
+                void NewThread3()
+                {
+                    while ((timestamp + maxsecondsbeforesell * 10000000) > DateTime.Now.ToFileTime())
+                    {
+                        count++;
+                        priceResult5 = client.Spot.Market.GetBookPrice(pair);
+                        if (priceResult5.Success)
+                        {
+                            tabBid.Add(priceResult5.Data.BestBidPrice.ToString());
+                            tabAsk.Add(priceResult5.Data.BestAskPrice.ToString());
+                            tabTime.Add(DateTime.Now.ToFileTime().ToString());
+                        }
+                        else
+                            return;
+                    }
+                }
+                void NewThread4()
+                {
+                    while ((timestamp + maxsecondsbeforesell * 10000000) > DateTime.Now.ToFileTime())
+                    {
+                        count++;
+                        priceResult6 = client.Spot.Market.GetBookPrice(pair);
+                        if (priceResult6.Success)
+                        {
+                            tabBid.Add(priceResult6.Data.BestBidPrice.ToString());
+                            tabAsk.Add(priceResult6.Data.BestAskPrice.ToString());
+                            tabTime.Add(DateTime.Now.ToFileTime().ToString());
+                        }
+                        else
+                            return;
+                    }
+                }
+                while ((timestamp + maxsecondsbeforesell * 10000000) > DateTime.Now.ToFileTime())
+                    Thread.Sleep(1000);
+                File.WriteAllLines("dataask.txt", tabAsk);
+                using (StreamReader sr = new StreamReader("dataask.txt"))
+                {
+                    string res = sr.ReadToEnd();
+                    Console.WriteLine(res);
+                }
+                File.WriteAllLines("databid.txt", tabBid);
+                using (StreamReader sr = new StreamReader("databid.txt"))
+                {
+                    string res = sr.ReadToEnd();
+                    Console.WriteLine(res);
+                }
+                File.WriteAllLines("datatime.txt", tabTime);
+                using (StreamReader sr = new StreamReader("datatime.txt"))
+                {
+                    string res = sr.ReadToEnd();
+                    Console.WriteLine(res);
+                }
             }
         }
         private static string ScrapeChannel(string discordToken, string channelId)
