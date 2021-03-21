@@ -290,6 +290,7 @@ namespace UsainBot
                     if (string.IsNullOrEmpty(symbol))
                         return;
                     closet3 = 1;
+                    client.ShouldCheckObjects = false;
                     ExecuteOrderListing(symbol, quantity, client, pairend, exchangeInfo, buyorderprice, sellorderprice);
                 }
                 else if (mode == "4")
@@ -307,14 +308,50 @@ namespace UsainBot
                     if (string.IsNullOrEmpty(tpstring))
                         return;
                     tp = Convert.ToDecimal(tpstring);
-                    Utilities.Write(ConsoleColor.Yellow, "Input symbol: ");
-                    Console.ForegroundColor = ConsoleColor.White;
-                    symbol = Console.ReadLine();
-                    symbol = symbol.ToUpper();
+                    if (config.discord_token.Length > 0)
+                    {
+                        Utilities.Write(ConsoleColor.Yellow, "Input symbol or Discord channel ID:");
+                        Console.ForegroundColor = ConsoleColor.White;
+                        symbol = Console.ReadLine();
+
+                        // if line is only digits, it's safe to assume it's a Discord channel ID.
+                        if (symbol.All(c => c >= '0' && c <= '9'))
+                        {
+                            string channelId = symbol;
+                            symbol = null;
+                            Console.WriteLine("Looking for symbol...");
+                            // Scrape channel every 100ms
+                            while (null == symbol)
+                            {
+                                symbol = ScrapeChannel(config.discord_token, channelId);
+                                Thread.Sleep(100);
+                            }
+                        }
+                        symbol = symbol.ToUpper();
+
+                        //Exit the program if nothing was entered
+                        if (string.IsNullOrEmpty(symbol))
+                            return;
+                    }
+                    else
+                    {
+                        //Wait for symbol input
+                        Utilities.Write(ConsoleColor.Yellow, "Input symbol: ");
+                        Console.ForegroundColor = ConsoleColor.White;
+                        symbol = Console.ReadLine();
+                        symbol = symbol.ToUpper();
+                    }
+                    //Exit the program if nothing was entered
                     if (string.IsNullOrEmpty(symbol))
                         return;
+                    //Try to execute the order
                     closet3 = 1;
                     Listener(symbol, client, pairend, exchangeInfo, tp);
+                }
+                else
+                {
+                    Utilities.Write(ConsoleColor.Red, "sorry this mode is not available to you");
+                    return;
                 }
                 client = new BinanceClient();
                 exchangeInfo = client.Spot.System.GetExchangeInfo();
@@ -930,7 +967,7 @@ namespace UsainBot
         private static string ScrapeChannel(string discordToken, string channelId)
         {
             // Look for something that starts with a '$' followed by 2 to 5 alphabetic characters.
-            Regex regex = new Regex(@"(\$)[a-zA-Z]{2,5}");
+            Regex regex = new Regex(@"(\#)[a-zA-Z]{2,5}");
             try
             {
                 HttpWebRequest req = (HttpWebRequest)WebRequest.Create("https://discord.com/api/v8/channels/" + channelId + "/messages?limit=1");
