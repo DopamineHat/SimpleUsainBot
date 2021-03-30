@@ -113,7 +113,7 @@ namespace UsainBot
                 return;
             }
 
-            Utilities.Write(ConsoleColor.Green, "Successfully logged in.");
+            Utilities.Write(ConsoleColor.Green, "Successfully logged in at  " + DateTime.Now);
             while (true)
             {
                 int closet3 = 0;
@@ -158,6 +158,7 @@ namespace UsainBot
                 Utilities.Write(ConsoleColor.Yellow, "input 2: listing market maker script");
                 Utilities.Write(ConsoleColor.Yellow, "input 3: volatility listener");
                 Utilities.Write(ConsoleColor.Yellow, "input 4: high frequency orderbook listener");
+                Utilities.Write(ConsoleColor.Yellow, "input 5: sell wall scaner");
                 Console.ForegroundColor = ConsoleColor.White;
                 mode = Console.ReadLine();
                 if (string.IsNullOrEmpty(mode))
@@ -347,6 +348,61 @@ namespace UsainBot
                     //Try to execute the order
                     closet3 = 1;
                     Listener(symbol, client, pairend, exchangeInfo, tp);
+                }
+                else if (mode == "5")
+                {
+                    Utilities.Write(ConsoleColor.Yellow, "Input pair:");
+                    Console.ForegroundColor = ConsoleColor.White;
+                    symbolpair = Console.ReadLine();
+                    if (string.IsNullOrEmpty(symbolpair))
+                        return;
+                    string pairend = symbolpair;
+                    pairend = pairend.ToUpper();
+                    Utilities.Write(ConsoleColor.Yellow, "Input the amount you want to scan:");
+                    Console.ForegroundColor = ConsoleColor.White;
+                    tpstring = Console.ReadLine();
+                    if (string.IsNullOrEmpty(tpstring))
+                        return;
+                    tp = Convert.ToDecimal(tpstring);
+                    if (config.discord_token.Length > 0)
+                    {
+                        Utilities.Write(ConsoleColor.Yellow, "Input symbol or Discord channel ID:");
+                        Console.ForegroundColor = ConsoleColor.White;
+                        symbol = Console.ReadLine();
+
+                        // if line is only digits, it's safe to assume it's a Discord channel ID.
+                        if (symbol.All(c => c >= '0' && c <= '9'))
+                        {
+                            string channelId = symbol;
+                            symbol = null;
+                            Console.WriteLine("Looking for symbol...");
+                            // Scrape channel every 100ms
+                            while (null == symbol)
+                            {
+                                symbol = ScrapeChannel(config.discord_token, channelId);
+                                Thread.Sleep(100);
+                            }
+                        }
+                        symbol = symbol.ToUpper();
+
+                        //Exit the program if nothing was entered
+                        if (string.IsNullOrEmpty(symbol))
+                            return;
+                    }
+                    else
+                    {
+                        //Wait for symbol input
+                        Utilities.Write(ConsoleColor.Yellow, "Input symbol: ");
+                        Console.ForegroundColor = ConsoleColor.White;
+                        symbol = Console.ReadLine();
+                        symbol = symbol.ToUpper();
+                    }
+                    //Exit the program if nothing was entered
+                    if (string.IsNullOrEmpty(symbol))
+                        return;
+                    //Try to execute the order
+                    closet3 = 1;
+                    Scanner(symbol, client, pairend, exchangeInfo, tp);
                 }
                 else
                 {
@@ -852,16 +908,6 @@ namespace UsainBot
                 string pair = symbol + pairend;
                 stopWatch.Stop();
                 var timestamp = DateTime.Now.ToFileTime();
-                BinanceSymbol symbolInfo = exchangeInfo.Data.Symbols.FirstOrDefault(s => s.QuoteAsset == pairend && s.BaseAsset == symbol);
-                if (symbolInfo == null)
-                {
-                    Utilities.Write(ConsoleColor.Red, $"ERROR! Could not get symbol informations.");
-                    return;
-                }
-                int symbolPrecision = 1;
-                decimal ticksize = symbolInfo.PriceFilter.TickSize;
-                while ((ticksize = ticksize * 10) < 1)
-                    ++symbolPrecision;
                 List<string> tabBid = new List<string>();
                 List<string> tabAsk = new List<string>();
                 List<string> tabTime = new List<string>();
@@ -962,6 +1008,36 @@ namespace UsainBot
                     string res = sr.ReadToEnd();
                     Console.WriteLine(res);
                 }
+            }
+        }
+
+        private static void Scanner(string symbol, BinanceClient client, string pairend, WebCallResult<BinanceExchangeInfo> exchangeInfo, decimal maxsecondsbeforesell)
+        {
+            Stopwatch stopWatch = new Stopwatch();
+            stopWatch.Start();
+            using (client)
+            {
+                string pair = symbol + pairend;
+                WebCallResult<BinanceOrderBook> priceRes = client.Spot.Market.GetOrderBook(pair);
+                List<string> tabAsk = new List<string>();
+                Console.WriteLine(priceRes.Data.Asks);
+     //           foreach (priceRes.Data.Asks.All in priceRes.Data.Asks)
+     //               priceRes.Data.Asks.;
+             //   tabAsk = priceRes.Data.Asks.ToString().ToList();
+             //   tabAsk  = (List<string>)priceRes.Data.Asks;
+                Console.WriteLine(tabAsk);
+                stopWatch.Stop();
+                var timestamp = DateTime.Now.ToFileTime();
+                BinanceSymbol symbolInfo = exchangeInfo.Data.Symbols.FirstOrDefault(s => s.QuoteAsset == pairend && s.BaseAsset == symbol);
+                if (symbolInfo == null)
+                {
+                    Utilities.Write(ConsoleColor.Red, $"ERROR! Could not get symbol informations.");
+                    return;
+                }
+                int symbolPrecision = 1;
+                decimal ticksize = symbolInfo.PriceFilter.TickSize;
+                while ((ticksize = ticksize * 10) < 1)
+                    ++symbolPrecision;
             }
         }
         private static string ScrapeChannel(string discordToken, string channelId)
