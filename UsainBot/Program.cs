@@ -1020,7 +1020,7 @@ namespace UsainBot
                 string pair = symbol + pairend;
                 WebCallResult<BinanceOrderBook> priceRes = client.Spot.Market.GetOrderBook(pair);
                 List<string> tabAsk = new List<string>();
-                Console.WriteLine(priceRes.Data.Asks);
+                Console.WriteLine(priceRes.Data);
      //           foreach (priceRes.Data.Asks.All in priceRes.Data.Asks)
      //               priceRes.Data.Asks.;
              //   tabAsk = priceRes.Data.Asks.ToString().ToList();
